@@ -2,8 +2,25 @@ import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
 import { healthResponseSchema } from '@ai-coach/shared';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createApp } from '../../app.js';
+import { createApp, type AppDeps } from '../../app.js';
+import { createAuthService } from '../auth/auth.service.js';
+import { createPasswordHasher } from '../auth/password.js';
+import { createTokenService } from '../auth/token.service.js';
+import { createProfileService } from '../profile/profile.service.js';
+import { memoryRepos, TEST_SECRET } from '../../test/test-app.js';
 import { createHealthService, type HealthServiceDeps } from './health.service.js';
+
+function appWith(health: AppDeps['health']) {
+  const repos = memoryRepos();
+  const tokens = createTokenService(TEST_SECRET, 60);
+  return createApp({
+    webOrigin: 'http://localhost:5173',
+    health,
+    tokens,
+    auth: createAuthService({ users: repos.userRepo, hasher: createPasswordHasher(4), tokens }),
+    profiles: createProfileService(repos.profileRepo),
+  });
+}
 
 const base: HealthServiceDeps = {
   pingDatabase: async () => undefined,
@@ -17,8 +34,7 @@ let server: Server | undefined;
 afterEach(() => server?.close());
 
 async function getHealth(deps: HealthServiceDeps) {
-  const app = createApp({ webOrigin: 'http://localhost:5173', health: createHealthService(deps) });
-  server = app.listen(0);
+  server = appWith(createHealthService(deps)).listen(0);
   const { port } = server.address() as AddressInfo;
   const res = await fetch(`http://127.0.0.1:${port}/health`);
   return { status: res.status, body: healthResponseSchema.parse(await res.json()) };
@@ -60,11 +76,7 @@ describe('GET /health', () => {
 
 describe('unknown routes', () => {
   it('return a JSON 404', async () => {
-    const app = createApp({
-      webOrigin: 'http://localhost:5173',
-      health: createHealthService(base),
-    });
-    server = app.listen(0);
+    server = appWith(createHealthService(base)).listen(0);
     const { port } = server.address() as AddressInfo;
     const res = await fetch(`http://127.0.0.1:${port}/nope`);
     expect(res.status).toBe(404);

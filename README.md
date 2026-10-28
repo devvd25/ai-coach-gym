@@ -46,7 +46,14 @@ pnpm install
 copy .env.example .env
 ```
 
-Mở `.env` và đổi `DB_PASSWORD`. SQL Server yêu cầu mật khẩu **≥ 8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt** — nếu mật khẩu yếu, container sẽ tự tắt.
+Mở `.env` và đổi:
+
+- `DB_PASSWORD`: SQL Server yêu cầu **≥ 8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt** — nếu mật khẩu yếu, container sẽ tự tắt.
+- `JWT_SECRET`: chuỗi ngẫu nhiên ≥ 32 ký tự, mỗi máy một giá trị. Tạo nhanh:
+
+  ```powershell
+  node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+  ```
 
 ### 4. Chạy SQL Server, tạo database và bảng
 
@@ -64,8 +71,22 @@ pnpm db:migrate   # tạo các bảng
 pnpm dev
 ```
 
-- Web: <http://localhost:5173> — trang **Trạng thái hệ thống** hiển thị API, SQL Server và Ollama.
+- Web: <http://localhost:5173> — đăng ký tài khoản → đồng ý dữ liệu → tạo hồ sơ → vào app.
+- Trạng thái hệ thống: <http://localhost:5173/trang-thai> hiển thị API, SQL Server và Ollama.
 - API: <http://localhost:4000/health> — trả `200` khi mọi thứ sẵn sàng, `503` khi có thành phần chưa sẵn sàng.
+
+### API hiện có
+
+| Method | Đường dẫn | Mô tả |
+|---|---|---|
+| GET | `/health` | Kiểm tra SQL Server + Ollama |
+| POST | `/api/auth/register` | Đăng ký (giới hạn 10 lần / 15 phút / IP) |
+| POST | `/api/auth/login` | Đăng nhập, trả JWT (giới hạn 10 lần / 15 phút / IP) |
+| GET | `/api/auth/me` | Thông tin người dùng hiện tại |
+| PUT | `/api/me/consent` | Đồng ý xử lý dữ liệu (2 mục bắt buộc + camera, nghiên cứu) |
+| GET / PUT | `/api/profile` | Xem / lưu hồ sơ tập luyện |
+
+Các đường dẫn `/api/*` (trừ đăng ký, đăng nhập) cần header `Authorization: Bearer <token>`. Token hết hạn sau `JWT_TTL_MINUTES` phút (mặc định 60), khi đó người dùng phải đăng nhập lại.
 
 ---
 

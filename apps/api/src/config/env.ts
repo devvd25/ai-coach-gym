@@ -15,6 +15,13 @@ const envSchema = z.object({
   DB_NAME: z.string().min(1),
   DB_USER: z.string().min(1),
   DB_PASSWORD: z.string().min(1),
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET cần tối thiểu 32 ký tự'),
+  JWT_TTL_MINUTES: z.coerce
+    .number()
+    .int()
+    .min(5)
+    .max(24 * 60)
+    .default(60),
   OLLAMA_HOST: z.url().default('http://127.0.0.1:11434'),
   OLLAMA_MODEL: z.string().min(1).default('qwen3:4b'),
 });

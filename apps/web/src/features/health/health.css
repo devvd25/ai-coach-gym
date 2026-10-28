@@ -15,32 +15,6 @@
   margin-bottom: var(--space-4);
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.logo-mark {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm);
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  font: 600 20px/1 var(--font-display);
-}
-
-.logo-text {
-  font: 600 22px/1 var(--font-display);
-  letter-spacing: 0.03em;
-}
-
-.logo-accent {
-  color: var(--color-primary);
-}
-
 .health-hero {
   border-top: 3px solid var(--color-primary);
   display: flex;
