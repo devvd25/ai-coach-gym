@@ -1,0 +1,21 @@
+node_modules/
+dist/
+coverage/
+*.log
+*.tsbuildinfo
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# ML data (real user data must never be committed)
+ml/data/*
+!ml/data/.gitkeep
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
