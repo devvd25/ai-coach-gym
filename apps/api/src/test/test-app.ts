@@ -9,6 +9,10 @@ import { createHealthService } from '../modules/health/health.service.js';
 import type { ProfileRepository } from '../modules/profile/profile.repository.js';
 import { createProfileService } from '../modules/profile/profile.service.js';
 import type { UserRecord, UserRepository } from '../modules/users/user.repository.js';
+import type { ExerciseService } from '../modules/exercises/exercise.service.js';
+import type { PlanService } from '../modules/plans/plan.service.js';
+import type { WeightService } from '../modules/workouts/weight.service.js';
+import type { WorkoutService } from '../modules/workouts/workout.service.js';
 
 export function memoryRepos() {
   const users = new Map<number, Omit<UserRecord, 'hasProfile'>>();
@@ -63,10 +67,61 @@ export function memoryRepos() {
 
 export const TEST_SECRET = 'test-secret-that-is-at-least-32-characters-long';
 
+/**
+ * Training services that record what the routes pass them. Their real implementations are thin
+ * Sequelize code; these tests cover routing, auth and validation, the shared package covers the maths.
+ */
+export function stubTrainingServices() {
+  const calls: { fn: string; args: unknown[] }[] = [];
+  const record =
+    <T>(fn: string, result: T) =>
+    async (...args: unknown[]) => {
+      calls.push({ fn, args });
+      return result;
+    };
+  const exercises: ExerciseService = {
+    list: record('exercises.list', []),
+    get: record('exercises.get', undefined as never),
+    assertExist: record('exercises.assertExist', undefined),
+  };
+  const plans: PlanService = {
+    getWeek: record('plans.getWeek', {
+      id: 1,
+      weekStart: '2026-10-26',
+      source: 'manual',
+      sessions: [],
+    }),
+    createWeek: record('plans.createWeek', {
+      id: 1,
+      weekStart: '2026-10-26',
+      source: 'manual',
+      sessions: [],
+    }),
+    getSession: record('plans.getSession', undefined as never),
+    addSession: record('plans.addSession', { ok: true } as never),
+    updateSession: record('plans.updateSession', { ok: true } as never),
+    deleteSession: record('plans.deleteSession', undefined),
+    setCompleted: record('plans.setCompleted', { ok: true } as never),
+    completeOwned: record('plans.completeOwned', undefined),
+  };
+  const workouts: WorkoutService = {
+    create: record('workouts.create', { ok: true } as never),
+    list: record('workouts.list', []),
+    get: record('workouts.get', undefined as never),
+  };
+  const weights: WeightService = {
+    list: record('weights.list', []),
+    upsert: record('weights.upsert', { date: '2026-10-28', weightKg: 68.4, note: '' }),
+    remove: record('weights.remove', undefined),
+  };
+  return { exercises, plans, workouts, weights, calls };
+}
+
 /** Starts the real Express app on a random port with in-memory repositories. */
 export async function startTestApp(opts: { authAttemptsPer15Min?: number } = {}) {
   const repos = memoryRepos();
   const tokens = createTokenService(TEST_SECRET, 60);
+  const training = stubTrainingServices();
   const app = createApp({
     webOrigin: 'http://localhost:5173',
     tokens,
@@ -78,6 +133,7 @@ export async function startTestApp(opts: { authAttemptsPer15Min?: number } = {})
     }),
     auth: createAuthService({ users: repos.userRepo, hasher: createPasswordHasher(4), tokens }),
     profiles: createProfileService(repos.profileRepo),
+    ...training,
     authAttemptsPer15Min: opts.authAttemptsPer15Min ?? 100,
   });
   const server: Server = app.listen(0);
@@ -96,5 +152,5 @@ export async function startTestApp(opts: { authAttemptsPer15Min?: number } = {})
     return { status: res.status, body: (await res.json()) as Record<string, unknown> };
   }
 
-  return { base, call, repos, tokens, close: () => server.close() };
+  return { base, call, repos, tokens, calls: training.calls, close: () => server.close() };
 }

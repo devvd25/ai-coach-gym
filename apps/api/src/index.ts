@@ -6,7 +6,11 @@ import { createSequelize } from './db/sequelize.js';
 import { createAuthService } from './modules/auth/auth.service.js';
 import { createPasswordHasher } from './modules/auth/password.js';
 import { createTokenService } from './modules/auth/token.service.js';
+import { createExerciseService } from './modules/exercises/exercise.service.js';
 import { createHealthService } from './modules/health/health.service.js';
+import { createPlanService } from './modules/plans/plan.service.js';
+import { createWeightService } from './modules/workouts/weight.service.js';
+import { createWorkoutService } from './modules/workouts/workout.service.js';
 import { createSequelizeProfileRepository } from './modules/profile/profile.repository.js';
 import { createProfileService } from './modules/profile/profile.service.js';
 import { createSequelizeUserRepository } from './modules/users/user.repository.js';
@@ -15,6 +19,8 @@ const sequelize = createSequelize(env);
 initModels(sequelize);
 const ollama = new Ollama({ host: env.OLLAMA_HOST });
 const tokens = createTokenService(env.JWT_SECRET, env.JWT_TTL_MINUTES);
+const exercises = createExerciseService();
+const plans = createPlanService(sequelize, exercises);
 
 const app = createApp({
   webOrigin: env.WEB_ORIGIN,
@@ -31,6 +37,10 @@ const app = createApp({
     tokens,
   }),
   profiles: createProfileService(createSequelizeProfileRepository()),
+  exercises,
+  plans,
+  workouts: createWorkoutService(sequelize, exercises, plans),
+  weights: createWeightService(),
 });
 
 const server = app.listen(env.API_PORT, () => {

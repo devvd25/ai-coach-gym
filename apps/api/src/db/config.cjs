@@ -17,6 +17,9 @@ const base = {
   },
   define: { underscored: true },
   migrationStorageTableName: 'sequelize_meta',
+  // Track seeders too, so `pnpm db:seed` can be re-run without duplicating rows.
+  seederStorage: 'sequelize',
+  seederStorageTableName: 'sequelize_data',
 };
 
 module.exports = { development: base, test: base, production: base };

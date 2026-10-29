@@ -8,18 +8,15 @@ import { HealthPage } from './features/health/HealthPage.js';
 import { ComingSoonPage } from './features/placeholder/ComingSoonPage.js';
 import { OnboardingPage } from './features/profile/OnboardingPage.js';
 import { ProfilePage } from './features/profile/ProfilePage.js';
+import { LibraryPage } from './features/training/LibraryPage.js';
+import { LogPage } from './features/training/LogPage.js';
+import { PlanPage } from './features/training/PlanPage.js';
+import { WorkoutPage } from './features/training/WorkoutPage.js';
+import { WorkoutSummaryPage } from './features/training/WorkoutSummaryPage.js';
 import { AppLayout } from './layouts/AppLayout.js';
 
 const SOON = [
-  ['lich-tap', 'Lịch tập', 'M2 – M3', 'Lịch tập theo tuần, sửa buổi tập và đánh dấu hoàn thành.'],
-  [
-    'thu-vien',
-    'Thư viện bài tập',
-    'M2',
-    'Khoảng 40 bài tập với nhóm cơ, dụng cụ, độ khó và hướng dẫn.',
-  ],
   ['camera', 'Camera Squat', 'M4', 'Đếm rep Squat bằng MediaPipe ngay trên trình duyệt.'],
-  ['nhat-ky', 'Nhật ký', 'M2', 'Ghi set, rep, khối lượng, RPE và cân nặng theo ngày.'],
   ['dinh-duong', 'Dinh dưỡng', 'M3', 'AI tính calo, macro và gợi ý thực đơn mỗi ngày.'],
   ['ai-coach', 'AI Coach', 'M3', 'Hỏi đáp và giải thích kế hoạch bằng LLM chạy local.'],
 ] as const;
@@ -58,6 +55,12 @@ export function App() {
         <Route element={<RequireReady />}>
           <Route element={<AppLayout />}>
             <Route index element={<DashboardPage />} />
+            <Route path="lich-tap" element={<PlanPage />} />
+            <Route path="buoi-tap/:sessionId" element={<WorkoutPage />} />
+            <Route path="thu-vien" element={<LibraryPage />} />
+            <Route path="thu-vien/:slug" element={<LibraryPage />} />
+            <Route path="nhat-ky" element={<LogPage />} />
+            <Route path="nhat-ky/:id" element={<WorkoutSummaryPage />} />
             {SOON.map(([path, title, milestone, description]) => (
               <Route
                 key={path}

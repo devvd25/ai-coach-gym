@@ -26,6 +26,28 @@ export function validateBody(schema: z.ZodType): RequestHandler {
   };
 }
 
+/** Parses query-string or route params; empty strings count as "not set". */
+export function parseQuery<S extends z.ZodType>(schema: S, raw: unknown): z.infer<S> {
+  const cleaned =
+    raw && typeof raw === 'object'
+      ? Object.fromEntries(Object.entries(raw).filter(([, v]) => v !== ''))
+      : raw;
+  const result = schema.safeParse(cleaned);
+  if (!result.success) {
+    throw new AppError(400, 'VALIDATION', 'Tham số không hợp lệ', fieldErrors(result.error));
+  }
+  return result.data;
+}
+
+/** Positive integer route param such as :id, otherwise 404 (an id that cannot exist). */
+export function idParam(value: unknown): number {
+  const id = Number(value);
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy tài nguyên');
+  }
+  return id;
+}
+
 /** The user id set by requireAuth. */
 export function userIdOf(res: Response): number {
   const id: unknown = res.locals.userId;

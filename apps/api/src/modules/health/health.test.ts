@@ -7,7 +7,7 @@ import { createAuthService } from '../auth/auth.service.js';
 import { createPasswordHasher } from '../auth/password.js';
 import { createTokenService } from '../auth/token.service.js';
 import { createProfileService } from '../profile/profile.service.js';
-import { memoryRepos, TEST_SECRET } from '../../test/test-app.js';
+import { memoryRepos, stubTrainingServices, TEST_SECRET } from '../../test/test-app.js';
 import { createHealthService, type HealthServiceDeps } from './health.service.js';
 
 function appWith(health: AppDeps['health']) {
@@ -19,6 +19,7 @@ function appWith(health: AppDeps['health']) {
     tokens,
     auth: createAuthService({ users: repos.userRepo, hasher: createPasswordHasher(4), tokens }),
     profiles: createProfileService(repos.profileRepo),
+    ...stubTrainingServices(),
   });
 }
 
