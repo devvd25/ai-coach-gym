@@ -19,6 +19,7 @@ function appWith(health: AppDeps['health']) {
     tokens,
     auth: createAuthService({ users: repos.userRepo, hasher: createPasswordHasher(4), tokens }),
     profiles: createProfileService(repos.profileRepo),
+    users: repos.userRepo,
     ...stubTrainingServices(),
   });
 }

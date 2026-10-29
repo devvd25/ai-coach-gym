@@ -92,6 +92,7 @@ pnpm dev
 | POST | `/api/ai/chat` | Hỏi đáp `{ messages }` (tối đa 12 tin gần nhất) |
 | GET | `/api/ai/requests` | Lịch sử gọi AI của người dùng (độ trễ, retry, fallback) |
 | GET | `/api/ai/status` | Model, thinking, timeout, phiên bản prompt |
+| GET / POST | `/api/squat-sessions` | Kết quả buổi Squat bằng camera (POST cần đồng ý dùng camera) |
 
 Các endpoint `POST /api/ai/*` giới hạn `AI_RATE_LIMIT_PER_HOUR` lượt/giờ cho mỗi người dùng. Mỗi lần gọi được ghi vào bảng `ai_requests` để làm thực nghiệm. Kết quả của model luôn được kiểm tra bằng Zod và luật an toàn (`apps/api/src/modules/ai/safety-rules.ts`); sai thì hỏi lại 1 lần, vẫn sai thì dùng kế hoạch/thực đơn mẫu.
 
@@ -146,4 +147,6 @@ docker-compose.yml  SQL Server 2022 (chỉ mở ở 127.0.0.1)
 | Trang web báo **Ollama: Không kết nối được** | Mở ứng dụng Ollama (biểu tượng ở khay hệ thống) |
 | Trang web báo **Chưa có model qwen3:4b** | Chạy `ollama pull qwen3:4b` |
 | AI báo **Hết thời gian chờ Ollama** hoặc luôn ra "Mẫu chuẩn" | Lần gọi đầu phải nạp model vào GPU (~10 giây). Kiểm tra `ollama ps` thấy `100% GPU`; tăng `OLLAMA_TIMEOUT_MS` nếu máy yếu |
+| Camera Squat báo **không tải được mô hình** | Trang tải WASM MediaPipe từ cdn.jsdelivr.net và mô hình pose từ storage.googleapis.com ở lần đầu, cần mạng (video vẫn không rời máy) |
+| Camera Squat không đếm | Đứng nghiêng ~90°, lùi xa để thấy cả hông – gối – cổ chân; ngưỡng đếm nằm ở `apps/web/src/features/squat/config.ts` |
 | Web báo **Chưa kết nối được API** | Kiểm tra cửa sổ `pnpm dev` có lỗi ở `apps/api` không; thường do thiếu biến trong `.env` |

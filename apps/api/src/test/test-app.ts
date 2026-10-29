@@ -14,6 +14,7 @@ import type { PlanService } from '../modules/plans/plan.service.js';
 import type { WeightService } from '../modules/workouts/weight.service.js';
 import type { WorkoutService } from '../modules/workouts/workout.service.js';
 import type { AiService } from '../modules/ai/ai.service.js';
+import type { SquatService } from '../modules/squat/squat.service.js';
 
 export function memoryRepos() {
   const users = new Map<number, Omit<UserRecord, 'hasProfile'>>();
@@ -143,7 +144,11 @@ export function stubTrainingServices() {
       requestsPerHour: 20,
     }),
   };
-  return { exercises, plans, workouts, weights, ai, calls };
+  const squats: SquatService = {
+    create: record('squats.create', { ok: true } as never),
+    list: record('squats.list', []),
+  };
+  return { exercises, plans, workouts, weights, ai, squats, calls };
 }
 
 /** Starts the real Express app on a random port with in-memory repositories. */
@@ -164,6 +169,7 @@ export async function startTestApp(
     }),
     auth: createAuthService({ users: repos.userRepo, hasher: createPasswordHasher(4), tokens }),
     profiles: createProfileService(repos.profileRepo),
+    users: repos.userRepo,
     ...training,
     authAttemptsPer15Min: opts.authAttemptsPer15Min ?? 100,
     aiRequestsPerHour: opts.aiRequestsPerHour ?? 100,

@@ -14,12 +14,14 @@ import { createPlanService } from './modules/plans/plan.service.js';
 import { createWeightService } from './modules/workouts/weight.service.js';
 import { createWorkoutService } from './modules/workouts/workout.service.js';
 import { createSequelizeProfileRepository } from './modules/profile/profile.repository.js';
+import { createSquatService } from './modules/squat/squat.service.js';
 import { createProfileService } from './modules/profile/profile.service.js';
 import { createSequelizeUserRepository } from './modules/users/user.repository.js';
 
 const sequelize = createSequelize(env);
 initModels(sequelize);
 const ollama = new Ollama({ host: env.OLLAMA_HOST });
+const users = createSequelizeUserRepository();
 const tokens = createTokenService(env.JWT_SECRET, env.JWT_TTL_MINUTES);
 const exercises = createExerciseService();
 const plans = createPlanService(sequelize, exercises);
@@ -53,7 +55,7 @@ const app = createApp({
     version: process.env.npm_package_version ?? '0.1.0',
   }),
   auth: createAuthService({
-    users: createSequelizeUserRepository(),
+    users,
     hasher: createPasswordHasher(),
     tokens,
   }),
@@ -63,6 +65,8 @@ const app = createApp({
   workouts,
   weights,
   ai,
+  squats: createSquatService(),
+  users,
   aiRequestsPerHour: env.AI_RATE_LIMIT_PER_HOUR,
 });
 
