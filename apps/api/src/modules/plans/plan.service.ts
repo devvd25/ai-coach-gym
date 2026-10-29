@@ -23,6 +23,14 @@ export interface PlanService {
   setCompleted(userId: number, sessionId: number, completed: boolean): Promise<Session>;
   /** Used by workout logging: marks the session done inside the caller's transaction. */
   completeOwned(userId: number, sessionId: number, at: Date, t: Transaction): Promise<void>;
+  /** Used by the AI coach: swaps the whole week for generated sessions. */
+  replaceWeek(
+    userId: number,
+    weekStart: string,
+    source: 'ai' | 'template',
+    aiNote: string,
+    sessions: SessionInput[],
+  ): Promise<Plan>;
 }
 
 const NOT_FOUND = () => new AppError(404, 'NOT_FOUND', 'Không tìm thấy buổi tập');
@@ -69,6 +77,7 @@ function toPlan(row: PlanModel): Plan {
     id: row.id,
     weekStart: row.weekStart,
     source: row.source,
+    aiNote: row.aiNote ?? null,
     sessions: [...(row.sessions ?? [])]
       .sort((a, b) => order(a.day) - order(b.day) || a.id - b.id)
       .map(toSession),
@@ -102,12 +111,17 @@ export function createPlanService(sequelize: Sequelize, exercises: ExerciseServi
     );
   }
 
+  async function findWeek(userId: number, weekStart: string, t?: Transaction) {
+    return PlanModel.findOne({
+      where: { userId, weekStart },
+      include: [{ model: PlanSessionModel, as: 'sessions', include: sessionInclude }],
+      transaction: t,
+    });
+  }
+
   return {
     async getWeek(userId, weekStart) {
-      const row = await PlanModel.findOne({
-        where: { userId, weekStart },
-        include: [{ model: PlanSessionModel, as: 'sessions', include: sessionInclude }],
-      });
+      const row = await findWeek(userId, weekStart);
       if (!row) throw new AppError(404, 'PLAN_NOT_FOUND', 'Chưa có lịch tập cho tuần này');
       return toPlan(row);
     },
@@ -181,6 +195,48 @@ export function createPlanService(sequelize: Sequelize, exercises: ExerciseServi
     async completeOwned(userId, sessionId, at, t) {
       const row = await ownedSession(userId, sessionId, t);
       await row.update({ completedAt: at }, { transaction: t });
+    },
+
+    async replaceWeek(userId, weekStart, source, aiNote, sessions) {
+      await exercises.assertExist(sessions.flatMap((s) => s.exercises.map((e) => e.exerciseId)));
+      return sequelize.transaction(async (t) => {
+        let plan = await PlanModel.findOne({ where: { userId, weekStart }, transaction: t });
+        if (plan) {
+          const old = (
+            await PlanSessionModel.findAll({
+              where: { planId: plan.id },
+              attributes: ['id'],
+              transaction: t,
+            })
+          ).map((r) => r.id);
+          if (old.length) {
+            await WorkoutLogModel.update(
+              { sessionId: null },
+              { where: { sessionId: old }, transaction: t },
+            );
+            await PlanSessionModel.destroy({ where: { planId: plan.id }, transaction: t });
+          }
+          await plan.update({ source, aiNote }, { transaction: t });
+        } else {
+          plan = await PlanModel.create({ userId, weekStart, source, aiNote }, { transaction: t });
+        }
+        for (const input of sessions) {
+          const row = await PlanSessionModel.create(
+            {
+              planId: plan.id,
+              day: input.day,
+              title: input.title,
+              durationMin: input.durationMin,
+              notes: input.notes,
+            },
+            { transaction: t },
+          );
+          await writeItems(row.id, input, t);
+        }
+        const fresh = await findWeek(userId, weekStart, t);
+        if (!fresh) throw new AppError(500, 'INTERNAL', 'Đã có lỗi xảy ra, vui lòng thử lại');
+        return toPlan(fresh);
+      });
     },
   };
 }

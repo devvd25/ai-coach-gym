@@ -13,6 +13,7 @@ import type { ExerciseService } from '../modules/exercises/exercise.service.js';
 import type { PlanService } from '../modules/plans/plan.service.js';
 import type { WeightService } from '../modules/workouts/weight.service.js';
 import type { WorkoutService } from '../modules/workouts/workout.service.js';
+import type { AiService } from '../modules/ai/ai.service.js';
 
 export function memoryRepos() {
   const users = new Map<number, Omit<UserRecord, 'hasProfile'>>();
@@ -89,12 +90,14 @@ export function stubTrainingServices() {
       id: 1,
       weekStart: '2026-10-26',
       source: 'manual',
+      aiNote: null,
       sessions: [],
     }),
     createWeek: record('plans.createWeek', {
       id: 1,
       weekStart: '2026-10-26',
       source: 'manual',
+      aiNote: null,
       sessions: [],
     }),
     getSession: record('plans.getSession', undefined as never),
@@ -103,6 +106,7 @@ export function stubTrainingServices() {
     deleteSession: record('plans.deleteSession', undefined),
     setCompleted: record('plans.setCompleted', { ok: true } as never),
     completeOwned: record('plans.completeOwned', undefined),
+    replaceWeek: record('plans.replaceWeek', undefined as never),
   };
   const workouts: WorkoutService = {
     create: record('workouts.create', { ok: true } as never),
@@ -114,11 +118,38 @@ export function stubTrainingServices() {
     upsert: record('weights.upsert', { date: '2026-10-28', weightKg: 68.4, note: '' }),
     remove: record('weights.remove', undefined),
   };
-  return { exercises, plans, workouts, weights, calls };
+  const meta = {
+    requestId: 1,
+    model: 'qwen3:4b',
+    promptVersion: 'chat.v1',
+    latencyMs: 10,
+    schemaValid: true,
+    retryCount: 0,
+    violations: [],
+    usedFallback: false,
+  };
+  const ai: AiService = {
+    generatePlan: record('ai.generatePlan', { ok: true } as never),
+    generateNutrition: record('ai.generateNutrition', { ok: true } as never),
+    getNutrition: record('ai.getNutrition', { ok: true } as never),
+    review: record('ai.review', { ok: true } as never),
+    chat: record('ai.chat', { answer: 'Chào bạn', suggestions: [], meta }),
+    listRequests: record('ai.listRequests', []),
+    status: () => ({
+      model: 'qwen3:4b',
+      think: false,
+      timeoutMs: 120_000,
+      promptVersions: {},
+      requestsPerHour: 20,
+    }),
+  };
+  return { exercises, plans, workouts, weights, ai, calls };
 }
 
 /** Starts the real Express app on a random port with in-memory repositories. */
-export async function startTestApp(opts: { authAttemptsPer15Min?: number } = {}) {
+export async function startTestApp(
+  opts: { authAttemptsPer15Min?: number; aiRequestsPerHour?: number } = {},
+) {
   const repos = memoryRepos();
   const tokens = createTokenService(TEST_SECRET, 60);
   const training = stubTrainingServices();
@@ -135,6 +166,7 @@ export async function startTestApp(opts: { authAttemptsPer15Min?: number } = {})
     profiles: createProfileService(repos.profileRepo),
     ...training,
     authAttemptsPer15Min: opts.authAttemptsPer15Min ?? 100,
+    aiRequestsPerHour: opts.aiRequestsPerHour ?? 100,
   });
   const server: Server = app.listen(0);
   const { port } = server.address() as AddressInfo;

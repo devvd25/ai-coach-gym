@@ -31,10 +31,10 @@ export function DashboardPage() {
       />
       <section className="card card-accent stack">
         <p className="caption logo-accent">Hồ sơ đã sẵn sàng</p>
-        <h2>AI Coach sẽ lập kế hoạch tuần đầu tiên cho bạn</h2>
+        <h2>Để AI Coach lập kế hoạch tuần cho bạn</h2>
         <p className="muted">
-          Tính năng sinh lịch tập và thực đơn bằng AI có ở mốc M3. Trong lúc chờ, bạn có thể kiểm
-          tra lại hồ sơ.
+          AI tạo lịch tập và thực đơn theo hồ sơ dưới đây, chạy hoàn toàn trên máy (Ollama). Kết quả
+          luôn được kiểm tra luật an toàn trước khi hiển thị.
         </p>
         {p && (
           <div className="row">
@@ -44,7 +44,13 @@ export function DashboardPage() {
             <Mini label="Nơi tập" value={LOCATION_LABELS[p.location]} />
           </div>
         )}
-        <div>
+        <div className="row-actions">
+          <Link to="/lich-tap" className="btn btn-primary">
+            Xem lịch tập
+          </Link>
+          <Link to="/dinh-duong" className="btn btn-secondary">
+            Thực đơn hôm nay
+          </Link>
           <Link to="/ho-so" className="btn btn-secondary">
             Xem hồ sơ
           </Link>

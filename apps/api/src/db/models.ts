@@ -1,4 +1,5 @@
 import type { Sequelize } from 'sequelize';
+import { initAiModels } from '../modules/ai/ai.model.js';
 import { initExerciseModel } from '../modules/exercises/exercise.model.js';
 import { initPlanModels } from '../modules/plans/plan.model.js';
 import { initProfileModel } from '../modules/profile/profile.model.js';
@@ -11,4 +12,5 @@ export function initModels(sequelize: Sequelize): void {
   initExerciseModel(sequelize);
   initPlanModels(sequelize);
   initWorkoutModels(sequelize);
+  initAiModels(sequelize);
 }

@@ -52,6 +52,8 @@ export const planSchema = z.object({
   id: z.number().int(),
   weekStart: weekStartSchema,
   source: z.enum(PLAN_SOURCES),
+  /** The AI's explanation of why the plan looks like this (null for manual plans). */
+  aiNote: z.string().nullable(),
   sessions: z.array(sessionSchema),
 });
 

@@ -19,6 +19,8 @@ export class PlanModel extends Model<
   /** YYYY-MM-DD (Monday). */
   declare weekStart: string;
   declare source: CreationOptional<string>;
+  /** Why the AI proposed this plan; null for manual plans. */
+  declare aiNote: CreationOptional<string | null>;
   declare sessions?: NonAttribute<PlanSessionModel[]>;
 }
 
@@ -59,6 +61,7 @@ export function initPlanModels(sequelize: Sequelize): void {
       userId: { type: DataTypes.INTEGER, allowNull: false },
       weekStart: { type: DataTypes.DATEONLY, allowNull: false },
       source: { type: DataTypes.STRING(10), allowNull: false, defaultValue: 'manual' },
+      aiNote: { type: DataTypes.STRING(1000), allowNull: true },
     },
     { sequelize, tableName: 'plans', underscored: true },
   );

@@ -17,6 +17,8 @@ import { Icon } from '../../components/Icon.js';
 import { PageHeader } from '../../layouts/AppLayout.js';
 import { ApiError } from '../../lib/api.js';
 import { dayMonth as fmt } from '../../lib/format.js';
+import { AiBusy, AiMetaLine } from '../ai/AiBits.js';
+import { useGeneratePlan } from '../ai/api.js';
 import { useCreatePlan, useDeleteSession, useExercises, usePlan, useSetCompleted } from './api.js';
 import { SessionEditor } from './SessionEditor.js';
 import './training.css';
@@ -28,6 +30,7 @@ export function PlanPage() {
   const plan = usePlan(weekStart);
   const library = useExercises();
   const createPlan = useCreatePlan();
+  const generate = useGeneratePlan();
   const del = useDeleteSession();
   const setDone = useSetCompleted();
   const isThisWeek = weekStart === mondayOf(today);
@@ -37,6 +40,19 @@ export function PlanPage() {
 
   const goWeek = (by: number) => setParams({ tuan: addDays(weekStart, 7 * by) });
   const sessionsOn = (d: Day) => plan.data?.sessions.filter((s) => s.day === d) ?? [];
+  const meta = generate.data?.plan.weekStart === weekStart ? generate.data.meta : undefined;
+  const hasSessions = (plan.data?.sessions.length ?? 0) > 0;
+  const generateWithAi = () => {
+    if (
+      hasSessions &&
+      !window.confirm(
+        'AI sẽ thay toàn bộ buổi tập của tuần này bằng lịch mới. Nhật ký đã tập vẫn được giữ. Tiếp tục?',
+      )
+    ) {
+      return;
+    }
+    void run(() => generate.mutateAsync(weekStart));
+  };
   const run = async (fn: () => Promise<unknown>) => {
     setAlert(undefined);
     try {
@@ -74,28 +90,46 @@ export function PlanPage() {
             >
               Tuần sau →
             </button>
+            {plan.data && (
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={generate.isPending}
+                onClick={generateWithAi}
+              >
+                {hasSessions ? 'Tạo lại bằng AI' : 'Tạo lịch bằng AI'}
+              </button>
+            )}
           </>
         }
       />
       <FormAlert message={alert} />
+      <AiBusy
+        active={generate.isPending}
+        label="AI đang lập lịch theo hồ sơ, dụng cụ và chấn thương của bạn…"
+      />
 
       {plan.isPending && <p className="muted">Đang tải lịch tập…</p>}
-      {plan.data === null && (
+      {plan.data === null && !generate.isPending && (
         <section className="card card-accent stack">
           <p className="caption logo-accent">Chưa có lịch</p>
           <h2>Tuần này chưa có lịch tập</h2>
           <p className="muted">
-            Tạo lịch trống rồi tự thêm buổi tập. Ở mốc M3, AI Coach sẽ tự lập lịch theo hồ sơ của
-            bạn.
+            AI Coach lập lịch theo mục tiêu, trình độ, số buổi, dụng cụ và chấn thương trong hồ sơ.
+            Mọi lịch AI tạo đều được kiểm tra luật an toàn; bạn vẫn sửa được từng buổi. Hoặc tạo
+            lịch trống để tự xếp.
           </p>
-          <div>
+          <div className="row-actions">
+            <button type="button" className="btn btn-primary" onClick={generateWithAi}>
+              Tạo lịch bằng AI
+            </button>
             <button
               type="button"
-              className="btn btn-primary"
+              className="btn btn-secondary"
               disabled={createPlan.isPending}
               onClick={() => void run(() => createPlan.mutateAsync(weekStart))}
             >
-              Tạo lịch tuần này
+              Tạo lịch trống
             </button>
           </div>
         </section>
@@ -103,6 +137,20 @@ export function PlanPage() {
 
       {plan.data && (
         <>
+          {plan.data.aiNote && (
+            <section className="card card-accent stack">
+              <div className="card-title">
+                <p className="caption logo-accent">Vì sao AI đề xuất lịch này</p>
+                <span
+                  className={`badge ${plan.data.source === 'ai' ? 'badge-primary' : 'badge-neutral'}`}
+                >
+                  {plan.data.source === 'ai' ? 'AI đề xuất' : 'Mẫu chuẩn'}
+                </span>
+              </div>
+              <p className="ai-note">{plan.data.aiNote}</p>
+              {meta && <AiMetaLine meta={meta} />}
+            </section>
+          )}
           <ol className="week">
             {DAYS.map((d) => {
               const list = sessionsOn(d);

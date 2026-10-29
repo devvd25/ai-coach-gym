@@ -2,6 +2,8 @@ import cors from 'cors';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import { errorHandler } from './lib/http.js';
+import { createAiRouter } from './modules/ai/ai.routes.js';
+import type { AiService } from './modules/ai/ai.service.js';
 import { requireAuth } from './modules/auth/auth.middleware.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
 import type { AuthService } from './modules/auth/auth.service.js';
@@ -28,6 +30,9 @@ export interface AppDeps {
   plans: PlanService;
   workouts: WorkoutService;
   weights: WeightService;
+  ai: AiService;
+  /** AI generations per user per hour. */
+  aiRequestsPerHour?: number;
   /** Login/register attempts per IP per 15 minutes. */
   authAttemptsPer15Min?: number;
 }
@@ -52,6 +57,7 @@ export function createApp(deps: AppDeps): Express {
   app.use('/api', createExerciseRouter(deps.exercises, auth));
   app.use('/api', createPlanRouter(deps.plans, auth));
   app.use('/api', createWorkoutRouter(deps.workouts, deps.weights, auth));
+  app.use('/api', createAiRouter(deps.ai, auth, deps.aiRequestsPerHour ?? 20));
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Không tìm thấy tài nguyên' } });

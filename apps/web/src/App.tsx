@@ -4,6 +4,8 @@ import { PublicOnly, RequireAuth, RequireReady, SetupStep } from './features/aut
 import { LoginPage } from './features/auth/LoginPage.js';
 import { RegisterPage } from './features/auth/RegisterPage.js';
 import { DashboardPage } from './features/dashboard/DashboardPage.js';
+import { CoachPage } from './features/ai/CoachPage.js';
+import { NutritionPage } from './features/ai/NutritionPage.js';
 import { HealthPage } from './features/health/HealthPage.js';
 import { ComingSoonPage } from './features/placeholder/ComingSoonPage.js';
 import { OnboardingPage } from './features/profile/OnboardingPage.js';
@@ -17,8 +19,6 @@ import { AppLayout } from './layouts/AppLayout.js';
 
 const SOON = [
   ['camera', 'Camera Squat', 'M4', 'Đếm rep Squat bằng MediaPipe ngay trên trình duyệt.'],
-  ['dinh-duong', 'Dinh dưỡng', 'M3', 'AI tính calo, macro và gợi ý thực đơn mỗi ngày.'],
-  ['ai-coach', 'AI Coach', 'M3', 'Hỏi đáp và giải thích kế hoạch bằng LLM chạy local.'],
 ] as const;
 
 function NotFoundPage() {
@@ -61,6 +61,8 @@ export function App() {
             <Route path="thu-vien/:slug" element={<LibraryPage />} />
             <Route path="nhat-ky" element={<LogPage />} />
             <Route path="nhat-ky/:id" element={<WorkoutSummaryPage />} />
+            <Route path="dinh-duong" element={<NutritionPage />} />
+            <Route path="ai-coach" element={<CoachPage />} />
             {SOON.map(([path, title, milestone, description]) => (
               <Route
                 key={path}

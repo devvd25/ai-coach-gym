@@ -3,6 +3,8 @@ import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { initModels } from './db/models.js';
 import { createSequelize } from './db/sequelize.js';
+import { createAiService } from './modules/ai/ai.service.js';
+import { createOllamaClient } from './modules/ai/llm.service.js';
 import { createAuthService } from './modules/auth/auth.service.js';
 import { createPasswordHasher } from './modules/auth/password.js';
 import { createTokenService } from './modules/auth/token.service.js';
@@ -21,6 +23,25 @@ const ollama = new Ollama({ host: env.OLLAMA_HOST });
 const tokens = createTokenService(env.JWT_SECRET, env.JWT_TTL_MINUTES);
 const exercises = createExerciseService();
 const plans = createPlanService(sequelize, exercises);
+const profiles = createProfileService(createSequelizeProfileRepository());
+const workouts = createWorkoutService(sequelize, exercises, plans);
+const weights = createWeightService();
+const ai = createAiService({
+  llm: createOllamaClient({
+    host: env.OLLAMA_HOST,
+    model: env.OLLAMA_MODEL,
+    think: env.OLLAMA_THINK,
+    timeoutMs: env.OLLAMA_TIMEOUT_MS,
+  }),
+  profiles,
+  exercises,
+  plans,
+  workouts,
+  weights,
+  think: env.OLLAMA_THINK,
+  timeoutMs: env.OLLAMA_TIMEOUT_MS,
+  requestsPerHour: env.AI_RATE_LIMIT_PER_HOUR,
+});
 
 const app = createApp({
   webOrigin: env.WEB_ORIGIN,
@@ -36,11 +57,13 @@ const app = createApp({
     hasher: createPasswordHasher(),
     tokens,
   }),
-  profiles: createProfileService(createSequelizeProfileRepository()),
+  profiles,
   exercises,
   plans,
-  workouts: createWorkoutService(sequelize, exercises, plans),
-  weights: createWeightService(),
+  workouts,
+  weights,
+  ai,
+  aiRequestsPerHour: env.AI_RATE_LIMIT_PER_HOUR,
 });
 
 const server = app.listen(env.API_PORT, () => {

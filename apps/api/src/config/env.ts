@@ -24,6 +24,13 @@ const envSchema = z.object({
     .default(60),
   OLLAMA_HOST: z.url().default('http://127.0.0.1:11434'),
   OLLAMA_MODEL: z.string().min(1).default('qwen3:4b'),
+  /** qwen3 "thinking" is off by default: with a JSON schema it only adds latency. */
+  OLLAMA_THINK: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+  OLLAMA_TIMEOUT_MS: z.coerce.number().int().min(5_000).max(600_000).default(120_000),
+  AI_RATE_LIMIT_PER_HOUR: z.coerce.number().int().min(1).max(1000).default(20),
 });
 
 export type Env = z.infer<typeof envSchema>;

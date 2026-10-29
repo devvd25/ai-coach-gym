@@ -85,6 +85,15 @@ pnpm dev
 | GET | `/api/auth/me` | Thông tin người dùng hiện tại |
 | PUT | `/api/me/consent` | Đồng ý xử lý dữ liệu (2 mục bắt buộc + camera, nghiên cứu) |
 | GET / PUT | `/api/profile` | Xem / lưu hồ sơ tập luyện |
+| POST | `/api/ai/plan` | AI sinh lịch tuần `{ weekStart }`, thay lịch cũ của tuần đó |
+| POST | `/api/ai/nutrition` | AI tính calo/macro + thực đơn `{ date }` |
+| GET | `/api/nutrition/:date` | Thực đơn đã lưu của một ngày |
+| POST | `/api/ai/review` | Số liệu tuần + AI nhận xét tiến độ `{ weekStart }` |
+| POST | `/api/ai/chat` | Hỏi đáp `{ messages }` (tối đa 12 tin gần nhất) |
+| GET | `/api/ai/requests` | Lịch sử gọi AI của người dùng (độ trễ, retry, fallback) |
+| GET | `/api/ai/status` | Model, thinking, timeout, phiên bản prompt |
+
+Các endpoint `POST /api/ai/*` giới hạn `AI_RATE_LIMIT_PER_HOUR` lượt/giờ cho mỗi người dùng. Mỗi lần gọi được ghi vào bảng `ai_requests` để làm thực nghiệm. Kết quả của model luôn được kiểm tra bằng Zod và luật an toàn (`apps/api/src/modules/ai/safety-rules.ts`); sai thì hỏi lại 1 lần, vẫn sai thì dùng kế hoạch/thực đơn mẫu.
 
 Các đường dẫn `/api/*` (trừ đăng ký, đăng nhập) cần header `Authorization: Bearer <token>`. Token hết hạn sau `JWT_TTL_MINUTES` phút (mặc định 60), khi đó người dùng phải đăng nhập lại.
 
@@ -136,4 +145,5 @@ docker-compose.yml  SQL Server 2022 (chỉ mở ở 127.0.0.1)
 | `failed to connect to the docker API` | Docker Desktop chưa mở hoặc đang khởi động |
 | Trang web báo **Ollama: Không kết nối được** | Mở ứng dụng Ollama (biểu tượng ở khay hệ thống) |
 | Trang web báo **Chưa có model qwen3:4b** | Chạy `ollama pull qwen3:4b` |
+| AI báo **Hết thời gian chờ Ollama** hoặc luôn ra "Mẫu chuẩn" | Lần gọi đầu phải nạp model vào GPU (~10 giây). Kiểm tra `ollama ps` thấy `100% GPU`; tăng `OLLAMA_TIMEOUT_MS` nếu máy yếu |
 | Web báo **Chưa kết nối được API** | Kiểm tra cửa sổ `pnpm dev` có lỗi ở `apps/api` không; thường do thiếu biến trong `.env` |
