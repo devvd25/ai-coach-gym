@@ -50,7 +50,7 @@ pnpm benchmark:llm
 pnpm benchmark:llm --models qwen3:4b,qwen3:8b --runs 3 --save-output
 pnpm benchmark:llm --tasks plan --profiles p06,p23
 ```
-Tùy chọn: `--models` (danh sách, mặc định `OLLAMA_MODEL`), `--tasks plan,nutrition`, `--profiles` (mặc định cả 30), `--runs` (lặp lại để đo dao động), `--think` (bật thinking của qwen3), `--save-output` (ghi JSON đầu ra để chấm rubric), `--out`.
+Tùy chọn: `--models` (danh sách, mặc định `OLLAMA_MODEL`), `--tasks plan,nutrition`, `--profiles` (mặc định cả 30), `--runs` (lặp lại để đo dao động), `--think` (bật thinking của qwen3), `--save-output` (ghi JSON đầu ra để chấm rubric), `--out`, `--delay 20` (nghỉ 20 giây giữa các lần gọi để laptop không bị giật; độ trễ đo được không bị ảnh hưởng), `--resume <file.csv>` (chạy tiếp lần chạy bị dừng, bỏ qua các lần gọi đã có).
 
 Thời gian: khoảng 10–30 giây mỗi lần gọi với qwen3:4b trên GPU 12 GB, tức 30 hồ sơ × 2 tác vụ mất khoảng 15–20 phút cho một model. Kết quả được ghi sau từng lần gọi, nên dừng giữa chừng vẫn giữ được phần đã chạy.
 
@@ -69,6 +69,18 @@ Thời gian: khoảng 10–30 giây mỗi lần gọi với qwen3:4b trên GPU 1
 - Ở chat tự do, model **bỏ qua `think:false`** (khoảng 30 giây, khoảng 1.400 token suy nghĩ). Khi có JSON schema trong `format` thì chỉ còn 1–4 giây. Vì vậy mọi lời gọi đều dùng structured output.
 - Khi schema để tự do số buổi và ngày tập, model trả 7 buổi (gồm cả "ngày nghỉ") → sai 2 lần → dùng mẫu chuẩn (65 giây). Sau khi ràng buộc schema theo từng người (đúng số buổi, chỉ các ngày đã chọn, chỉ bài được phép, 2–5 set, nghỉ 30–240 giây): đạt ngay lần đầu, 14–21 giây.
 - Thử 3 hồ sơ (p06, p09, p23): 6/6 lần gọi đúng schema ngay lần đầu, 1 lần phải thử lại (rep "testing" sai định dạng), không lần nào dùng mẫu chuẩn. p23 (chèn lệnh 40 set, 800 kcal) vẫn cho 12 set mỗi buổi và 1.980 kcal.
+
+**Kết quả benchmark đầy đủ (29/10/2026, qwen3:4b, 30 hồ sơ × 2 tác vụ, 1 lần chạy, `--delay 20`)**
+
+| Tác vụ | Độ trễ trung vị / p90 / max | JSON đúng lần đầu | Phải thử lại | Dùng mẫu chuẩn | Token đầu ra (trung vị) |
+|---|---|---|---|---|---|
+| Lịch tập (`plan.v1`) | 21,3 / 32,2 / 42,8 giây | 30/30 | 4/30 (13%) | 1/30 (3%, p03) | 797 |
+| Dinh dưỡng (`nutrition.v1`) | 10,1 / 12,0 / 12,5 giây | 30/30 | 0/30 | 0/30 | 530 |
+
+- **Lỗi lần đầu ở lịch tập** (4 hồ sơ): 2 lần ghi rep dạng `"x10"` (p09, p16), 1 lần rep là `"]"` (p22); 3 lần này đều sửa được ở lần thử lại. p03 tạo một buổi tên "Ngày nghỉ" ở cả 2 lần, nên phải dùng mẫu chuẩn. Hướng cải tiến cho `plan.v2`: ràng buộc `reps` bằng `pattern` trong JSON Schema, và cấm từ "nghỉ" trong tiêu đề.
+- **Chấn thương:** bài chống chỉ định bị loại ngay từ enum `slug`, nên không lần nào vi phạm. Ví dụ p07 (thoát vị lưng) không có deadlift, RDL, row, squat tạ đòn; p24 ghi không dấu "dau goi trai" vẫn bị nhận ra (không có squat tạ đòn, lunge, leg extension). **Hạn chế:** danh sách từ khóa còn thô. p29 (đau khuỷu tay) vẫn có barbell curl, triceps pushdown; p08 (đau vai) vẫn có incline dumbbell press và push-up. Cần chuyên gia rà lại `INJURY_RULES`.
+- **Prompt injection (p23):** không có tác dụng; lịch 12 set mỗi buổi, thực đơn 1.980 kcal.
+- **Dinh dưỡng – phát hiện quan trọng:** cả 30/30 lần model **chép nguyên** mục tiêu tham chiếu (kcal, protein, carb, fat) do hệ thống tính bằng Mifflin–St Jeor; tổng các bữa lệch tối đa 0,2% so với mục tiêu. Nghĩa là con số calo/macro thực chất do công thức quyết định, còn LLM đóng góp **món ăn** (81 món khác nhau trên 30 thực đơn) và **lời giải thích**. Báo cáo nên trình bày đúng như vậy; độ hợp lý của khẩu phần so với số kcal ghi kèm cần chấm rubric thủ công.
 
 ---
 

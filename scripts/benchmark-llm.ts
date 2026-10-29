@@ -13,6 +13,8 @@
  *   --think     turn qwen3 thinking on (default: off, as in the app)
  *   --save-output  also write the accepted JSON of each call to a .jsonl file for rubric scoring
  *   --out       output folder (default: scripts/results)
+ *   --delay     seconds to rest between calls, so a laptop stays usable (default: 0)
+ *   --resume    path of an earlier llm-benchmark-*.csv: skip the calls it already has and append
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -41,6 +43,8 @@ const { values } = parseArgs({
     think: { type: 'boolean', default: false },
     'save-output': { type: 'boolean', default: false },
     out: { type: 'string', default: join(here, 'results') },
+    delay: { type: 'string', default: '0' },
+    resume: { type: 'string' },
   },
   allowPositionals: true,
 });
@@ -54,6 +58,7 @@ const models = values.models
   .filter(Boolean);
 const tasks = values.tasks.split(',').map((t) => t.trim()) as Task[];
 const runs = Math.max(1, Number.parseInt(values.runs, 10) || 1);
+const delayMs = Math.max(0, Number(values.delay) || 0) * 1000;
 for (const t of tasks) {
   if (!TASKS.includes(t)) throw new Error(`Unknown task "${t}" (use ${TASKS.join(', ')})`);
 }
@@ -108,10 +113,22 @@ async function main() {
   const d = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
   const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
-  const csvPath = join(values.out, `llm-benchmark-${stamp}.csv`);
-  const jsonlPath = join(values.out, `llm-outputs-${stamp}.jsonl`);
+  const csvPath = values.resume ?? join(values.out, `llm-benchmark-${stamp}.csv`);
+  const jsonlPath = csvPath.replace('llm-benchmark-', 'llm-outputs-').replace(/\.csv$/, '.jsonl');
   const rows: string[] = [COLUMNS.join(',')];
   const outputs: string[] = [];
+  /** model|task|profile|run of calls already in the resumed file. */
+  const done = new Set<string>();
+  if (values.resume) {
+    // The first four columns never contain commas, so a plain split is enough to read the keys.
+    for (const line of readFileSync(csvPath, 'utf8').split(/\r?\n/).slice(1).filter(Boolean)) {
+      rows.push(line);
+      done.add(line.split(',').slice(0, 4).join('|'));
+    }
+    if (existsSync(jsonlPath))
+      outputs.push(...readFileSync(jsonlPath, 'utf8').split('\n').filter(Boolean));
+    console.log(`Resuming ${csvPath}: ${done.size} calls already done`);
+  }
   const host = process.env.OLLAMA_HOST ?? 'http://127.0.0.1:11434';
   const timeoutMs = Number(process.env.OLLAMA_TIMEOUT_MS ?? 120_000);
   const total = models.length * tasks.length * fixtures.length * runs;
@@ -123,6 +140,8 @@ async function main() {
       for (const f of fixtures) {
         for (let run = 1; run <= runs; run++) {
           n++;
+          if (done.has([model, task, f.id, run].join('|'))) continue;
+          if (delayMs && n > 1) await new Promise((r) => setTimeout(r, delayMs));
           let tokens: number | null = null;
           let error: string | null = null;
           const { data, meta } = await runStructured(
