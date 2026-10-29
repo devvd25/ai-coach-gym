@@ -44,3 +44,9 @@ export const MEDIAPIPE_WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vis
 
 /** Frames per second sampled from an uploaded video in evaluation mode. */
 export const EVAL_FPS_OPTIONS = [15, 30] as const;
+
+/**
+ * "Gentle" evaluation (on by default): rests between frames and between videos so a laptop does
+ * not heat up during long batches. Counting results are identical; only the run takes longer.
+ */
+export const EVAL_GENTLE = { frameRestMs: 40, videoRestMs: 5000 } as const;

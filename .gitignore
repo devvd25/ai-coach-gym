@@ -24,3 +24,6 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# Local evaluation videos served to the browser (junction to ml/data, never committed)
+apps/web/public/eval-data

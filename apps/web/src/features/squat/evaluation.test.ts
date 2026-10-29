@@ -58,8 +58,12 @@ describe('countingAccuracy', () => {
     expect(countingAccuracy([row(10, 10), row(8, 10), row(5, null)])).toEqual({
       videos: 2,
       mae: 1,
+      normMae: 0.1,
       exact: 0.5,
+      obo: 0.5,
     });
+    // Off-by-one counts as right for OBO but not for exact match.
+    expect(countingAccuracy([row(9, 10), row(4, 4)])).toMatchObject({ exact: 0.5, obo: 1 });
     expect(countingAccuracy([row(3, null)])).toBeNull();
   });
 });

@@ -1,93 +1,19 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FormAlert } from '../../components/form.js';
-import { COUNTER_CONFIG, EVAL_FPS_OPTIONS, POSE_MODELS, type PoseModel } from './config.js';
-import { initialState, step } from './counter.js';
+import {
+  COUNTER_CONFIG,
+  EVAL_FPS_OPTIONS,
+  EVAL_GENTLE,
+  POSE_MODELS,
+  type PoseModel,
+} from './config.js';
 import { countingAccuracy, evaluationCsv, type EvaluationRow } from './evaluation.js';
-import { detectPose, getLandmarker, nextTimeline } from './pose.js';
-
-function waitFor(el: HTMLVideoElement, event: 'loadeddata' | 'seeked'): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const done = () => {
-      el.removeEventListener(event, done);
-      el.removeEventListener('error', fail);
-      resolve();
-    };
-    const fail = () => {
-      el.removeEventListener(event, done);
-      el.removeEventListener('error', fail);
-      reject(new Error('Không đọc được video'));
-    };
-    el.addEventListener(event, done);
-    el.addEventListener('error', fail);
-  });
-}
-
-/**
- * Steps through the file frame by frame (seek, detect, count) instead of playing it, so the result
- * does not depend on how fast the machine is and is the same every run.
- */
-async function analyze(
-  file: File,
-  model: PoseModel,
-  fps: number,
-  onProgress: (fraction: number) => void,
-  cancelled: () => boolean,
-): Promise<EvaluationRow> {
-  const started = performance.now();
-  const landmarker = await getLandmarker(model);
-  const v = document.createElement('video');
-  v.muted = true;
-  v.playsInline = true;
-  v.preload = 'auto';
-  const url = URL.createObjectURL(file);
-  try {
-    v.src = url;
-    await waitFor(v, 'loadeddata');
-    let duration = v.duration;
-    if (!Number.isFinite(duration)) {
-      // Files recorded by browsers (MediaRecorder WebM) often report Infinity until seeked to the end.
-      v.currentTime = Number.MAX_SAFE_INTEGER;
-      await waitFor(v, 'seeked');
-      duration = v.duration;
-      v.currentTime = 0;
-      await waitFor(v, 'seeked');
-    }
-    if (!Number.isFinite(duration) || duration <= 0) {
-      throw new Error(`Không đọc được thời lượng của video ${file.name}`);
-    }
-    const aspect = v.videoWidth / v.videoHeight;
-    const base = nextTimeline(landmarker);
-    let state = initialState;
-    for (let i = 0; i * (1 / fps) < duration; i++) {
-      if (cancelled()) throw new Error('Đã hủy');
-      const t = i / fps;
-      if (Math.abs(v.currentTime - t) > 1e-6) {
-        v.currentTime = t;
-        await waitFor(v, 'seeked');
-      }
-      const landmarks = detectPose(landmarker, v, base + t * 1000);
-      state = step(state, { timestampMs: t * 1000, landmarks, aspect }, COUNTER_CONFIG);
-      if (i % 5 === 0) onProgress(t / duration);
-    }
-    onProgress(1);
-    return {
-      video: file.name,
-      model,
-      fps,
-      durationSec: duration,
-      processingSec: (performance.now() - started) / 1000,
-      result: state,
-      groundTruth: null,
-    };
-  } finally {
-    URL.revokeObjectURL(url);
-    v.removeAttribute('src');
-  }
-}
+import { isSquat, mergeLabels, parseLabels, videoKey, type LabelSet } from './labels.js';
+import { analyzeVideo, rest } from './video-eval.js';
 
 function download(name: string, content: string) {
   // BOM so Excel opens the Vietnamese file names correctly.
-  const blob = new Blob(['﻿', content], { type: 'text/csv;charset=utf-8' });
+  const blob = new Blob(['\uFEFF', content], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = name;
@@ -104,8 +30,40 @@ export function EvaluationPanel() {
   const [rows, setRows] = useState<EvaluationRow[]>([]);
   const [progress, setProgress] = useState<{ index: number; fraction: number } | null>(null);
   const [error, setError] = useState<string>();
+  const [labels, setLabels] = useState<LabelSet | null>(null);
+  const [onlySquat, setOnlySquat] = useState(true);
+  const [gentle, setGentle] = useState(true);
   const cancel = useRef(false);
+  const folderInput = useRef<HTMLInputElement>(null);
   const accuracy = countingAccuracy(rows);
+
+  useEffect(() => {
+    // Not in React's typings; lets the user pick a whole dataset folder.
+    folderInput.current?.setAttribute('webkitdirectory', '');
+  }, []);
+
+  const labelOf = (f: File) => labels?.byVideo.get(videoKey(f.name)) ?? null;
+  const usesTypes = (labels?.types.length ?? 0) > 0;
+  /** With a label file, only labelled videos are run (and only squats, unless unticked). */
+  const queue = files.filter((f) => {
+    if (!f.type.startsWith('video/') && !/\.(mp4|webm|mov|avi|mkv)$/i.test(f.name)) return false;
+    if (!labels) return true;
+    const l = labelOf(f);
+    return l !== null && (!onlySquat || !usesTypes || isSquat(l.type));
+  });
+
+  async function loadLabels(list: FileList | null) {
+    setError(undefined);
+    try {
+      const sets = await Promise.all(
+        [...(list ?? [])].map(async (f) => parseLabels(await f.text())),
+      );
+      setLabels(sets.length ? mergeLabels(sets) : null);
+    } catch (err) {
+      setLabels(null);
+      setError(err instanceof Error ? err.message : 'Không đọc được file nhãn');
+    }
+  }
 
   async function run() {
     setError(undefined);
@@ -113,17 +71,18 @@ export function EvaluationPanel() {
     cancel.current = false;
     const done: EvaluationRow[] = [];
     try {
-      for (const [index, file] of files.entries()) {
+      for (const [index, file] of queue.entries()) {
+        if (index > 0 && gentle) await rest(EVAL_GENTLE.videoRestMs);
+        if (cancel.current) break;
         setProgress({ index, fraction: 0 });
-        done.push(
-          await analyze(
-            file,
-            model,
-            fps,
-            (fraction) => setProgress({ index, fraction }),
-            () => cancel.current,
-          ),
-        );
+        const row = await analyzeVideo(file, {
+          model,
+          fps,
+          frameRestMs: gentle ? EVAL_GENTLE.frameRestMs : 0,
+          onProgress: (fraction) => setProgress({ index, fraction }),
+          cancelled: () => cancel.current,
+        });
+        done.push({ ...row, groundTruth: labelOf(file)?.count ?? null });
         setRows([...done]);
       }
     } catch (err) {
@@ -146,8 +105,9 @@ export function EvaluationPanel() {
       <section className="card stack">
         <h2>Chế độ đánh giá bằng video</h2>
         <p className="muted">
-          Chọn một hoặc nhiều video quay nghiêng khi tập Squat. Hệ thống chạy từng frame ngay trên
-          trình duyệt (không tải video lên máy chủ), đếm rep rồi xuất CSV để so với số đếm tay.
+          Chọn video (hoặc cả thư mục bộ dữ liệu) và, nếu có, file nhãn số rep (CSV của RepCount,
+          JSONL trên Hugging Face, hoặc CSV đã xuất từ trang này). Hệ thống chạy từng frame ngay
+          trên trình duyệt (không tải video lên máy chủ), đếm rep rồi so với nhãn và xuất CSV.
         </p>
         <div className="row">
           <label className="field">
@@ -161,6 +121,30 @@ export function EvaluationPanel() {
               onChange={(e) => setFiles([...(e.target.files ?? [])])}
             />
           </label>
+          <label className="field">
+            <span className="field-label">Hoặc cả thư mục</span>
+            <input
+              ref={folderInput}
+              className="input"
+              type="file"
+              multiple
+              disabled={running}
+              onChange={(e) => setFiles([...(e.target.files ?? [])])}
+            />
+          </label>
+          <label className="field">
+            <span className="field-label">Nhãn số rep (tùy chọn)</span>
+            <input
+              className="input"
+              type="file"
+              accept=".csv,.jsonl,.json,text/csv"
+              multiple
+              disabled={running}
+              onChange={(e) => void loadLabels(e.target.files)}
+            />
+          </label>
+        </div>
+        <div className="row">
           <label className="field">
             <span className="field-label">Mô hình</span>
             <select
@@ -192,11 +176,44 @@ export function EvaluationPanel() {
             </select>
           </label>
         </div>
+        <div className="row-actions">
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={gentle}
+              disabled={running}
+              onChange={(e) => setGentle(e.target.checked)}
+            />
+            <span>
+              Chế độ nhẹ: nghỉ {EVAL_GENTLE.frameRestMs} ms mỗi frame và{' '}
+              {EVAL_GENTLE.videoRestMs / 1000} giây giữa các video để máy không nóng (kết quả không
+              đổi, chỉ chạy lâu hơn)
+            </span>
+          </label>
+          {labels && usesTypes && (
+            <label className="checkbox">
+              <input
+                type="checkbox"
+                checked={onlySquat}
+                disabled={running}
+                onChange={(e) => setOnlySquat(e.target.checked)}
+              />
+              <span>Chỉ chạy video được gán nhãn squat</span>
+            </label>
+          )}
+        </div>
+        {labels && (
+          <p className="muted">
+            Đã đọc nhãn của {labels.byVideo.size} video
+            {usesTypes && ` (${labels.types.length} loại động tác)`}; {queue.length}/{files.length}{' '}
+            file đã chọn sẽ được chạy.
+          </p>
+        )}
         <FormAlert message={error} />
         {progress && (
           <div className="stack">
             <p className="muted">
-              Video {progress.index + 1}/{files.length}: {files[progress.index]?.name} ·{' '}
+              Video {progress.index + 1}/{queue.length}: {queue[progress.index]?.name} ·{' '}
               {Math.round(progress.fraction * 100)}%
             </p>
             <div className="progress">
@@ -219,10 +236,10 @@ export function EvaluationPanel() {
             <button
               type="button"
               className="btn btn-primary"
-              disabled={files.length === 0}
+              disabled={queue.length === 0}
               onClick={() => void run()}
             >
-              Chạy đánh giá {files.length > 0 && `(${files.length} video)`}
+              Chạy đánh giá {queue.length > 0 && `(${queue.length} video)`}
             </button>
           )}
           <button
@@ -242,9 +259,12 @@ export function EvaluationPanel() {
             <h2>Kết quả</h2>
             {accuracy && (
               <p className="muted">
-                {accuracy.videos} video có số đếm tay · MAE{' '}
-                {accuracy.mae.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} rep · đúng hoàn
-                toàn {Math.round(accuracy.exact * 100)}%
+                {accuracy.videos} video có nhãn · MAE{' '}
+                {accuracy.mae.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} rep
+                {accuracy.normMae !== null &&
+                  ` · MAE chuẩn hóa ${accuracy.normMae.toLocaleString('vi-VN', { maximumFractionDigits: 3 })}`}{' '}
+                · OBO {Math.round(accuracy.obo * 100)}% · đúng hoàn toàn{' '}
+                {Math.round(accuracy.exact * 100)}%
               </p>
             )}
           </div>
@@ -254,7 +274,7 @@ export function EvaluationPanel() {
                 <th scope="col">Video</th>
                 <th scope="col">Rep đếm được</th>
                 <th scope="col">Thời điểm rep (giây)</th>
-                <th scope="col">Đếm tay</th>
+                <th scope="col">Nhãn / đếm tay</th>
               </tr>
             </thead>
             <tbody>

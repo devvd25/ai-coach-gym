@@ -62,16 +62,29 @@ export function evaluationCsv(rows: readonly EvaluationRow[], cfg: CounterConfig
   return [CSV_COLUMNS.join(','), ...lines].join('\r\n') + '\r\n';
 }
 
-/** Mean absolute error and exact-match rate over the rows that have a ground truth. */
+/**
+ * Metrics over the rows that have a ground truth. `normMae` and `obo` are the ones used by
+ * RepCount/TransRAC, so results can be compared with the literature:
+ *  - normMae = mean(|counted − truth| / truth) over videos with truth > 0
+ *  - obo = share of videos counted within ±1 rep ("off-by-one accuracy")
+ */
 export function countingAccuracy(rows: readonly EvaluationRow[]) {
   const scored = rows.filter(
     (r): r is EvaluationRow & { groundTruth: number } => r.groundTruth != null,
   );
   if (scored.length === 0) return null;
   const errors = scored.map((r) => Math.abs(r.result.reps.length - r.groundTruth));
+  const positive = scored.filter((r) => r.groundTruth > 0);
   return {
     videos: scored.length,
     mae: errors.reduce((a, b) => a + b, 0) / scored.length,
+    normMae: positive.length
+      ? positive.reduce(
+          (s, r) => s + Math.abs(r.result.reps.length - r.groundTruth) / r.groundTruth,
+          0,
+        ) / positive.length
+      : null,
     exact: errors.filter((e) => e === 0).length / scored.length,
+    obo: errors.filter((e) => e <= 1).length / scored.length,
   };
 }

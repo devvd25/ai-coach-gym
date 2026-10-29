@@ -35,6 +35,40 @@ Ba đóng góp nghiên cứu của đề tài, mỗi phần có cách chạy, đ
 - `rep_min_angles_deg` cho thấy độ sâu: gần 90° là squat song song; nếu nhiều rep đúng bị bỏ do góc chỉ khoảng 115°, cân nhắc tăng `downAngle`.
 - Unit test của bộ đếm (dữ liệu giả lập): `pnpm --filter @ai-coach/web test`.
 
+### 1b. Dùng bộ dữ liệu công khai RepCount (không cần tự quay)
+
+Video lấy từ RepCount-A (Hu và cộng sự, *TransRAC*, CVPR 2022), bản lưu lại trong dataset Hugging Face [JevArena-mm/jevarena-MM_video](https://huggingface.co/datasets/JevArena-mm/jevarena-MM_video), thư mục `repcount-a`. Đây là dataset có kiểm soát truy cập, chỉ dùng cho nghiên cứu phi thương mại và **không được phát tán lại**. Nhãn số rep lấy từ [lmms-lab-eval/repcount](https://huggingface.co/datasets/lmms-lab-eval/repcount) (EveryShotCounts, có trường `action_type`). Báo cáo phải trích dẫn bài báo TransRAC.
+
+1. Đăng nhập Hugging Face, chấp nhận điều kiện của dataset JevArena, rồi chạy `python -m pip install huggingface_hub` và `hf auth login`.
+2. Tải nhãn và chỉ các video squat vào `ml/data/repcount/` (thư mục đã gitignore):
+   ```bash
+   hf download lmms-lab-eval/repcount --repo-type dataset --include "*.jsonl" --local-dir ml/data/repcount/labels
+   ```
+   Video: lọc các dòng `action_type` là squat hoặc "squant" (lỗi chính tả trong nhãn gốc), rồi tải `repcount-a/videos/<tên>.mp4` bằng `hf download JevArena-mm/jevarena-MM_video --repo-type dataset --include ... --local-dir ml/data/repcount`.
+3. Trang **Đánh giá bằng video**:
+   - chọn **cả thư mục** `ml/data/repcount/repcount-a/videos`;
+   - ở **Nhãn số rep**, chọn cả 3 file `labels/*.jsonl`;
+   - giữ "Chỉ chạy video được gán nhãn squat" và **Chế độ nhẹ**;
+   - bấm **Chạy đánh giá**, sau đó **Tải CSV**.
+4. Trang hiện cả **MAE chuẩn hóa** (|đếm − nhãn| / nhãn) và **OBO** (tỉ lệ video lệch ≤ 1 rep), hai chỉ số dùng trong các bài báo về RepCount.
+
+**Kết quả lần 1 (29/10/2026):** 29/33 video squat của phần test và validation RepCount-A có trên JevArena (bỏ 4 video lớn nhất); MediaPipe Lite, 15 frame/giây, ngưỡng 110°/160°, chế độ nhẹ, 31 phút trên laptop. File: `ml/data/repcount/results/squat-eval-repcount-lite-15fps-20261029.csv` (không commit).
+
+| Nhóm video | n | MAE (rep) | MAE chuẩn hóa | OBO | Đúng hoàn toàn | Đếm thiếu / thừa |
+|---|---|---|---|---|---|---|
+| Tất cả | 29 | 5,00 | 0,486 | 52% | 31% | 19 / 1 |
+| Thấy rõ chân (frame khuất ≤ 20%) | 23 | 5,57 | 0,395 | 61% | 35% | 14 / 1 |
+| Khuất chân (frame khuất > 20%) | 6 | 2,83 | 0,833 | 17% | 17% | 5 / 0 |
+| Thấy rõ và bộ đếm có kích hoạt | 19 | 4,05 | 0,268 | 68% | 42% | 10 / 1 |
+
+Nhận xét:
+- **Sai gần như hoàn toàn theo một hướng: đếm thiếu** (19 video thiếu, chỉ 1 video thừa; tổng đếm được 145 so với 288 rep thật). Bộ đếm hầu như không "bịa" rep: ngưỡng trễ và `minRepMs` làm đúng việc chống đếm nhầm. Đổi lại, nó bỏ sót nhiều rep.
+- **Nguyên nhân 1, góc quay:** RepCount là video YouTube và video học sinh tập thể dục, nhiều video quay **chính diện** chứ không nghiêng 90° như hướng dẫn của app. Nhìn chính diện, góc gối 2D gần như không đổi, nên 4 video thấy rõ người vẫn đếm 0 (`stu6_65`, `stu6_63`, `stu4_63`, `val1244`). 6 video có nhiều frame khuất chân thì OBO chỉ 17%.
+- **Nguyên nhân 2, squat nông:** ở các video bị thiếu, góc gối thấp nhất đo được thường 100–109° (ví dụ `stu8_62` đếm 10/22, `stu6_61` 1/19), sát ngưỡng `downAngle = 110°`. Ngưỡng này được đặt cho squat sâu đúng kỹ thuật, trong khi nhãn RepCount đếm cả rep nông.
+- Video quay đúng điều kiện (nghiêng, thấy rõ, squat sâu) cho kết quả tốt: `stu5_62` 31/32, `stu9_64` 14/14, `stu6_57` 15/15, `stu3_66` 10/9.
+- **Cách viết vào báo cáo:** trên dữ liệu "ngoài điều kiện thiết kế", bộ đếm có độ chính xác cao về rep đã đếm (hầu như không đếm thừa) nhưng độ phủ thấp. Đây là căn cứ cho (a) hướng dẫn đứng nghiêng trong app và (b) thí nghiệm độ nhạy ngưỡng `downAngle` (110°, 120°, 130°) cùng với chế độ quay chính diện ở bước sau.
+- Không so trực tiếp con số với TransRAC: bài báo báo cáo trên mọi loại động tác của RepCount-A, còn ở đây chỉ có squat. Nếu đưa vào báo cáo, chỉ so cùng định nghĩa chỉ số và ghi rõ khác biệt về tập dữ liệu.
+
 ---
 
 ## 2. Benchmark LLM (Ollama)
