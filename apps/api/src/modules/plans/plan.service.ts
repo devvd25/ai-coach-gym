@@ -6,7 +6,7 @@ import {
   type Session,
   type SessionInput,
 } from '@ai-coach/shared';
-import type { Sequelize, Transaction } from 'sequelize';
+import { Op, type Sequelize, type Transaction } from 'sequelize';
 import { AppError } from '../../lib/http.js';
 import { ExerciseModel } from '../exercises/exercise.model.js';
 import type { ExerciseService } from '../exercises/exercise.service.js';
@@ -23,6 +23,11 @@ export interface PlanService {
   setCompleted(userId: number, sessionId: number, completed: boolean): Promise<Session>;
   /** Used by workout logging: marks the session done inside the caller's transaction. */
   completeOwned(userId: number, sessionId: number, at: Date, t: Transaction): Promise<void>;
+  /** Planned vs completed sessions for every week from `fromWeek` on (dashboard). */
+  weekSummaries(
+    userId: number,
+    fromWeek: string,
+  ): Promise<{ weekStart: string; planned: number; completed: number }[]>;
   /** Used by the AI coach: swaps the whole week for generated sessions. */
   replaceWeek(
     userId: number,
@@ -195,6 +200,19 @@ export function createPlanService(sequelize: Sequelize, exercises: ExerciseServi
     async completeOwned(userId, sessionId, at, t) {
       const row = await ownedSession(userId, sessionId, t);
       await row.update({ completedAt: at }, { transaction: t });
+    },
+
+    async weekSummaries(userId, fromWeek) {
+      const rows = await PlanModel.findAll({
+        where: { userId, weekStart: { [Op.gte]: fromWeek } },
+        attributes: ['id', 'weekStart'],
+        include: [{ model: PlanSessionModel, as: 'sessions', attributes: ['id', 'completedAt'] }],
+      });
+      return rows.map((p) => ({
+        weekStart: p.weekStart,
+        planned: p.sessions?.length ?? 0,
+        completed: p.sessions?.filter((s) => s.completedAt !== null).length ?? 0,
+      }));
     },
 
     async replaceWeek(userId, weekStart, source, aiNote, sessions) {

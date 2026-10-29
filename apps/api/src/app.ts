@@ -14,6 +14,8 @@ import { createHealthRouter } from './modules/health/health.routes.js';
 import type { HealthService } from './modules/health/health.service.js';
 import { createPlanRouter } from './modules/plans/plan.routes.js';
 import type { PlanService } from './modules/plans/plan.service.js';
+import { createStatsRouter } from './modules/stats/stats.routes.js';
+import type { StatsService } from './modules/stats/stats.service.js';
 import { createSquatRouter } from './modules/squat/squat.routes.js';
 import type { SquatService } from './modules/squat/squat.service.js';
 import type { UserRepository } from './modules/users/user.repository.js';
@@ -35,6 +37,7 @@ export interface AppDeps {
   weights: WeightService;
   ai: AiService;
   squats: SquatService;
+  stats: StatsService;
   /** Read-only use: the camera routes check the user's camera consent. */
   users: UserRepository;
   /** AI generations per user per hour. */
@@ -63,6 +66,7 @@ export function createApp(deps: AppDeps): Express {
   app.use('/api', createExerciseRouter(deps.exercises, auth));
   app.use('/api', createPlanRouter(deps.plans, auth));
   app.use('/api', createWorkoutRouter(deps.workouts, deps.weights, auth));
+  app.use('/api', createStatsRouter(deps.stats, auth));
   app.use('/api', createSquatRouter(deps.squats, deps.users, auth));
   app.use('/api', createAiRouter(deps.ai, auth, deps.aiRequestsPerHour ?? 20));
 

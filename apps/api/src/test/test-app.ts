@@ -15,6 +15,7 @@ import type { WeightService } from '../modules/workouts/weight.service.js';
 import type { WorkoutService } from '../modules/workouts/workout.service.js';
 import type { AiService } from '../modules/ai/ai.service.js';
 import type { SquatService } from '../modules/squat/squat.service.js';
+import { createStatsService } from '../modules/stats/stats.service.js';
 
 export function memoryRepos() {
   const users = new Map<number, Omit<UserRecord, 'hasProfile'>>();
@@ -108,6 +109,7 @@ export function stubTrainingServices() {
     setCompleted: record('plans.setCompleted', { ok: true } as never),
     completeOwned: record('plans.completeOwned', undefined),
     replaceWeek: record('plans.replaceWeek', undefined as never),
+    weekSummaries: record('plans.weekSummaries', []),
   };
   const workouts: WorkoutService = {
     create: record('workouts.create', { ok: true } as never),
@@ -148,7 +150,9 @@ export function stubTrainingServices() {
     create: record('squats.create', { ok: true } as never),
     list: record('squats.list', []),
   };
-  return { exercises, plans, workouts, weights, ai, squats, calls };
+  // The real stats service on top of the stubs, so route tests exercise the aggregation too.
+  const stats = createStatsService({ plans, workouts, weights, squats });
+  return { exercises, plans, workouts, weights, ai, squats, stats, calls };
 }
 
 /** Starts the real Express app on a random port with in-memory repositories. */

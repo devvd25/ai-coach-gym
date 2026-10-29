@@ -92,6 +92,7 @@ pnpm dev
 | POST | `/api/ai/chat` | Hỏi đáp `{ messages }` (tối đa 12 tin gần nhất) |
 | GET | `/api/ai/requests` | Lịch sử gọi AI của người dùng (độ trễ, retry, fallback) |
 | GET | `/api/ai/status` | Model, thinking, timeout, phiên bản prompt |
+| GET | `/api/stats/dashboard?weeks=8` | Số liệu Dashboard theo tuần: buổi tập, khối lượng, % hoàn thành, rep Squat, cân nặng |
 | GET / POST | `/api/squat-sessions` | Kết quả buổi Squat bằng camera (POST cần đồng ý dùng camera) |
 
 Các endpoint `POST /api/ai/*` giới hạn `AI_RATE_LIMIT_PER_HOUR` lượt/giờ cho mỗi người dùng. Mỗi lần gọi được ghi vào bảng `ai_requests` để làm thực nghiệm. Kết quả của model luôn được kiểm tra bằng Zod và luật an toàn (`apps/api/src/modules/ai/safety-rules.ts`); sai thì hỏi lại 1 lần, vẫn sai thì dùng kế hoạch/thực đơn mẫu.

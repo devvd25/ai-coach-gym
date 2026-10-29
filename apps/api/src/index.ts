@@ -14,6 +14,7 @@ import { createPlanService } from './modules/plans/plan.service.js';
 import { createWeightService } from './modules/workouts/weight.service.js';
 import { createWorkoutService } from './modules/workouts/workout.service.js';
 import { createSequelizeProfileRepository } from './modules/profile/profile.repository.js';
+import { createStatsService } from './modules/stats/stats.service.js';
 import { createSquatService } from './modules/squat/squat.service.js';
 import { createProfileService } from './modules/profile/profile.service.js';
 import { createSequelizeUserRepository } from './modules/users/user.repository.js';
@@ -28,6 +29,7 @@ const plans = createPlanService(sequelize, exercises);
 const profiles = createProfileService(createSequelizeProfileRepository());
 const workouts = createWorkoutService(sequelize, exercises, plans);
 const weights = createWeightService();
+const squats = createSquatService();
 const ai = createAiService({
   llm: createOllamaClient({
     host: env.OLLAMA_HOST,
@@ -65,7 +67,8 @@ const app = createApp({
   workouts,
   weights,
   ai,
-  squats: createSquatService(),
+  squats,
+  stats: createStatsService({ plans, workouts, weights, squats }),
   users,
   aiRequestsPerHour: env.AI_RATE_LIMIT_PER_HOUR,
 });

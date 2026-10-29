@@ -7,4 +7,5 @@ export * from './health.js';
 export * from './plan.js';
 export * from './profile.js';
 export * from './squat.js';
+export * from './stats.js';
 export * from './workout.js';
