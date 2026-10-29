@@ -22,7 +22,14 @@ const envSchema = z.object({
     .min(5)
     .max(24 * 60)
     .default(60),
-  OLLAMA_HOST: z.url().default('http://127.0.0.1:11434'),
+  // Ollama has no authentication, so it must stay on this machine (AGENTS.md §8).
+  OLLAMA_HOST: z
+    .url()
+    .default('http://127.0.0.1:11434')
+    .refine(
+      (u) => ['127.0.0.1', 'localhost', '[::1]'].includes(new URL(u).hostname),
+      'OLLAMA_HOST phải là localhost/127.0.0.1',
+    ),
   OLLAMA_MODEL: z.string().min(1).default('qwen3:4b'),
   /** qwen3 "thinking" is off by default: with a JSON schema it only adds latency. */
   OLLAMA_THINK: z

@@ -13,7 +13,8 @@
     "db:migrate": "sequelize-cli db:migrate --config src/db/config.cjs --migrations-path src/db/migrations",
     "db:migrate:undo": "sequelize-cli db:migrate:undo --config src/db/config.cjs --migrations-path src/db/migrations",
     "db:seed": "sequelize-cli db:seed:all --config src/db/config.cjs --seeders-path src/db/seeders",
-    "export:training": "tsx src/scripts/export-training.ts"
+    "export:training": "tsx src/scripts/export-training.ts",
+    "seed:demo": "tsx src/scripts/seed-demo.ts"
   },
   "dependencies": {
     "@ai-coach/shared": "workspace:*",

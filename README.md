@@ -73,6 +73,7 @@ pnpm dev
 ```
 
 - Web: <http://localhost:5173> — đăng ký tài khoản → đồng ý dữ liệu → tạo hồ sơ → vào app.
+- Hoặc dùng tài khoản demo có sẵn 8 tuần dữ liệu: chạy `pnpm db:seed:demo` rồi đăng nhập `demo@aicoach.local` / `Demo2026`.
 - Trạng thái hệ thống: <http://localhost:5173/trang-thai> hiển thị API, SQL Server và Ollama.
 - API: <http://localhost:4000/health> — trả `200` khi mọi thứ sẵn sàng, `503` khi có thành phần chưa sẵn sàng.
 
@@ -110,17 +111,23 @@ Các đường dẫn `/api/*` (trừ đăng ký, đăng nhập) cần header `Au
 | `pnpm lint` | ESLint + kiểm tra định dạng Prettier |
 | `pnpm format` | Tự định dạng code bằng Prettier |
 | `pnpm typecheck` | Kiểm tra kiểu TypeScript cho cả 3 package |
-| `pnpm test` | Chạy unit test (Vitest) |
+| `pnpm test` | Unit test + test HTTP; test tích hợp SQL Server (`*.db.test.ts`, database riêng `ai_coach_test`) chạy khi `pnpm db:up`, nếu không thì tự bỏ qua |
 | `pnpm build` | Build shared, API và web |
 | `pnpm db:up` / `pnpm db:down` | Bật / tắt SQL Server (dữ liệu giữ trong volume `sqlserver-data`) |
 | `pnpm db:create` | Tạo database theo `DB_NAME` |
 | `pnpm db:migrate` | Chạy migration mới |
+| `pnpm db:seed` | Thêm thư viện 40 bài tập (chạy lại không trùng) |
+| `pnpm db:seed:demo` | Tạo lại tài khoản demo `demo@aicoach.local` / `Demo2026` với 8 tuần dữ liệu |
 | `pnpm --filter @ai-coach/api db:migrate:undo` | Hoàn tác migration gần nhất |
 | `pnpm benchmark:llm` | Benchmark LLM trên 30 hồ sơ mẫu → `scripts/results/` |
 | `pnpm ml:export` | Xuất dữ liệu tập luyện ẩn danh (người dùng đồng ý nghiên cứu) → `ml/data/real_weeks.csv` |
 | `python ml/generate_synthetic.py` | Sinh dữ liệu mô phỏng → `ml/data/synthetic_weeks.csv` |
 
-Cách chạy và đọc kết quả 3 thực nghiệm (đếm Squat, benchmark LLM, Random Forest): xem [docs/experiments.md](docs/experiments.md).
+Tài liệu:
+- [docs/architecture.md](docs/architecture.md): sơ đồ kiến trúc, luồng AI, bộ đếm Squat, cơ sở dữ liệu, kiểm thử
+- [docs/security.md](docs/security.md): rà soát bảo mật theo AGENTS.md §8 và rủi ro đã chấp nhận
+- [docs/experiments.md](docs/experiments.md): cách chạy và đọc kết quả 3 thực nghiệm
+- [docs/demo.md](docs/demo.md): chuẩn bị, kịch bản 15 phút và phương án dự phòng cho buổi bảo vệ
 
 Tạo migration mới (đặt tên theo thời gian, đuôi `.cjs`) trong `apps/api/src/db/migrations/`. **Không dùng** `sequelize.sync({ alter: true })`.
 
@@ -140,7 +147,7 @@ packages/
   shared/         Zod schema + type dùng chung
 scripts/          benchmark-llm.ts + fixtures/profiles (30 hồ sơ mẫu)
 ml/               generate_synthetic.py, progress_lib.py, progress_rf.ipynb, figures/, data/ (không commit)
-docs/             experiments.md
+docs/             architecture.md, security.md, experiments.md, demo.md
 docker-compose.yml  SQL Server 2022 (chỉ mở ở 127.0.0.1)
 .env.example        Mẫu biến môi trường
 ```

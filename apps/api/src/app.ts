@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import { errorHandler } from './lib/http.js';
 import { createAiRouter } from './modules/ai/ai.routes.js';
 import type { AiService } from './modules/ai/ai.service.js';
-import { requireAuth } from './modules/auth/auth.middleware.js';
+import { both, requireAuth, requireHealthConsent } from './modules/auth/auth.middleware.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
 import type { AuthService } from './modules/auth/auth.service.js';
 import type { TokenService } from './modules/auth/token.service.js';
@@ -54,6 +54,8 @@ export function createApp(deps: AppDeps): Express {
   app.use(express.json({ limit: '200kb' }));
 
   const auth = requireAuth(deps.tokens);
+  // Everything that reads or writes health data also needs the health-data consent.
+  const consented = both(auth, requireHealthConsent(deps.users));
   app.use(createHealthRouter(deps.health));
   app.use(
     '/api',
@@ -62,13 +64,13 @@ export function createApp(deps: AppDeps): Express {
       attemptsPer15Min: deps.authAttemptsPer15Min ?? 10,
     }),
   );
-  app.use('/api', createProfileRouter(deps.profiles, auth));
+  app.use('/api', createProfileRouter(deps.profiles, consented));
   app.use('/api', createExerciseRouter(deps.exercises, auth));
-  app.use('/api', createPlanRouter(deps.plans, auth));
-  app.use('/api', createWorkoutRouter(deps.workouts, deps.weights, auth));
-  app.use('/api', createStatsRouter(deps.stats, auth));
-  app.use('/api', createSquatRouter(deps.squats, deps.users, auth));
-  app.use('/api', createAiRouter(deps.ai, auth, deps.aiRequestsPerHour ?? 20));
+  app.use('/api', createPlanRouter(deps.plans, consented));
+  app.use('/api', createWorkoutRouter(deps.workouts, deps.weights, consented));
+  app.use('/api', createStatsRouter(deps.stats, consented));
+  app.use('/api', createSquatRouter(deps.squats, deps.users, consented));
+  app.use('/api', createAiRouter(deps.ai, consented, deps.aiRequestsPerHour ?? 20));
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Không tìm thấy tài nguyên' } });

@@ -1,5 +1,6 @@
 import { fieldErrors, type ApiErrorBody } from '@ai-coach/shared';
 import type { ErrorRequestHandler, RequestHandler, Response } from 'express';
+import { BaseError } from 'sequelize';
 import type { z } from 'zod';
 
 /** An error whose message is safe to show to the user (Vietnamese). */
@@ -55,6 +56,16 @@ export function userIdOf(res: Response): number {
   return id;
 }
 
+/**
+ * What may go to the log for an unexpected error. Database errors are reduced to their name:
+ * SQL Server puts the offending values (e.g. a duplicate email) into the message (AGENTS.md §8).
+ */
+export function safeLogLine(err: unknown): string {
+  if (!(err instanceof Error)) return `Unexpected non-error thrown (${typeof err})`;
+  if (err instanceof BaseError) return `${err.name} (database error, details hidden)`;
+  return `${err.name}: ${err.message}`;
+}
+
 export const errorHandler: ErrorRequestHandler = (err: unknown, _req, res, _next) => {
   if (err instanceof AppError) {
     const body: ApiErrorBody = {
@@ -67,12 +78,18 @@ export const errorHandler: ErrorRequestHandler = (err: unknown, _req, res, _next
     res.status(err.status).json(body);
     return;
   }
+  if (err instanceof Error && 'status' in err && err.status === 413) {
+    res
+      .status(413)
+      .json({ error: { code: 'PAYLOAD_TOO_LARGE', message: 'Dữ liệu gửi lên quá lớn' } });
+    return;
+  }
   // Malformed JSON bodies come from express.json() as a SyntaxError with status 400.
   if (err instanceof SyntaxError && 'status' in err && err.status === 400) {
     res.status(400).json({ error: { code: 'BAD_JSON', message: 'Dữ liệu gửi lên không hợp lệ' } });
     return;
   }
-  console.error(err instanceof Error ? err.message : err);
+  console.error(safeLogLine(err));
   res
     .status(500)
     .json({ error: { code: 'INTERNAL', message: 'Đã có lỗi xảy ra, vui lòng thử lại' } });

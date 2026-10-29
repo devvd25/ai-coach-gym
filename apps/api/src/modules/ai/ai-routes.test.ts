@@ -1,4 +1,3 @@
-import { authResponseSchema } from '@ai-coach/shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { startTestApp } from '../../test/test-app.js';
 
@@ -8,13 +7,7 @@ afterEach(() => app?.close());
 
 async function signedIn(opts: { aiRequestsPerHour?: number } = {}) {
   app = await startTestApp(opts);
-  const res = await app.call('POST', '/api/auth/register', {
-    fullName: 'Người dùng',
-    email: 'u@email.com',
-    password: 'Squat2026',
-    acceptTerms: true,
-  });
-  return { app, token: authResponseSchema.parse(res.body).token };
+  return { app, token: await app.signUp() };
 }
 
 const ask = { messages: [{ role: 'user', content: 'Tôi nên tập gì hôm nay?' }] };

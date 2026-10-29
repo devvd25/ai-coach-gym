@@ -1,6 +1,6 @@
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
-import type { Profile } from '@ai-coach/shared';
+import { authResponseSchema, type Profile } from '@ai-coach/shared';
 import { createApp } from '../app.js';
 import { createAuthService } from '../modules/auth/auth.service.js';
 import { createPasswordHasher } from '../modules/auth/password.js';
@@ -194,5 +194,26 @@ export async function startTestApp(
     return { status: res.status, body: (await res.json()) as Record<string, unknown> };
   }
 
-  return { base, call, repos, tokens, calls: training.calls, close: () => server.close() };
+  /** Registers a user and, unless told otherwise, gives the health-data consent; returns the JWT. */
+  async function signUp(email = 'u@email.com', opts: { consent?: boolean; camera?: boolean } = {}) {
+    const res = await call('POST', '/api/auth/register', {
+      fullName: 'Người dùng',
+      email,
+      password: 'Squat2026',
+      acceptTerms: true,
+    });
+    const { token } = authResponseSchema.parse(res.body);
+    if (opts.consent ?? true) {
+      const consent = {
+        profileData: true,
+        trainingLogs: true,
+        camera: opts.camera ?? false,
+        research: false,
+      };
+      await call('PUT', '/api/me/consent', consent, token);
+    }
+    return token;
+  }
+
+  return { base, call, signUp, repos, tokens, calls: training.calls, close: () => server.close() };
 }

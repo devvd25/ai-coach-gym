@@ -8,6 +8,28 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      # For the *.db.test.ts integration tests (database ai_coach_test is created by the tests).
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_PID: Developer
+          MSSQL_SA_PASSWORD: Ci-only-Passw0rd!
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Ci-only-Passw0rd!' -C -b -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 1433
+      DB_USER: sa
+      # Throwaway password of the CI container only; real secrets live in .env (never committed).
+      DB_PASSWORD: Ci-only-Passw0rd!
+      REQUIRE_DB_TESTS: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

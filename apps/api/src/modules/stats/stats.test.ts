@@ -1,4 +1,4 @@
-import { authResponseSchema, type SquatSession, type WorkoutSummary } from '@ai-coach/shared';
+import type { SquatSession, WorkoutSummary } from '@ai-coach/shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { startTestApp } from '../../test/test-app.js';
 import { buildDashboard } from './stats.aggregate.js';
@@ -110,13 +110,7 @@ describe('GET /api/stats/dashboard', () => {
   it('requires a login and validates the range', async () => {
     app = await startTestApp();
     expect((await app.call('GET', '/api/stats/dashboard')).status).toBe(401);
-    const reg = await app.call('POST', '/api/auth/register', {
-      fullName: 'Người dùng',
-      email: 'u@email.com',
-      password: 'Squat2026',
-      acceptTerms: true,
-    });
-    const token = authResponseSchema.parse(reg.body).token;
+    const token = await app.signUp();
     expect((await app.call('GET', '/api/stats/dashboard?weeks=99', undefined, token)).status).toBe(
       400,
     );

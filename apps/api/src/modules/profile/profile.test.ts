@@ -1,4 +1,4 @@
-import { authResponseSchema, profileSchema, userSchema, type Profile } from '@ai-coach/shared';
+import { profileSchema, userSchema, type Profile } from '@ai-coach/shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { startTestApp } from '../../test/test-app.js';
 
@@ -22,13 +22,7 @@ const profile: Profile = {
 };
 
 async function signUp(email: string) {
-  const res = await app!.call('POST', '/api/auth/register', {
-    fullName: 'Người dùng',
-    email,
-    password: 'Squat2026',
-    acceptTerms: true,
-  });
-  return authResponseSchema.parse(res.body).token;
+  return app!.signUp(email);
 }
 
 describe('/api/profile', () => {

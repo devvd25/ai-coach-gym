@@ -19,6 +19,7 @@
     "db:create": "pnpm --filter @ai-coach/api db:create",
     "db:migrate": "pnpm --filter @ai-coach/api db:migrate",
     "db:seed": "pnpm --filter @ai-coach/api db:seed",
+    "db:seed:demo": "pnpm --filter @ai-coach/shared build && pnpm --filter @ai-coach/api seed:demo",
     "benchmark:llm": "pnpm --filter @ai-coach/shared build && pnpm --filter @ai-coach/scripts benchmark:llm",
     "ml:export": "pnpm --filter @ai-coach/shared build && pnpm --filter @ai-coach/api export:training"
   },
