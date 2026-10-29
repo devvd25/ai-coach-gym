@@ -1,0 +1,18 @@
+{
+  "id": "p30",
+  "description": "Nữ cao 180 cm, nặng 85 kg",
+  "profile": {
+    "goal": "fat_loss",
+    "sex": "female",
+    "age": 28,
+    "heightCm": 180,
+    "weightKg": 85,
+    "level": "intermediate",
+    "injuries": "",
+    "sessionsPerWeek": 4,
+    "sessionMinutes": 60,
+    "preferredDays": [],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

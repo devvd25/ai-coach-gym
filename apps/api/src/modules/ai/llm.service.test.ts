@@ -81,8 +81,19 @@ describe('runStructured', () => {
     expect(meta).toMatchObject({
       schemaValid: true,
       retryCount: 1,
-      violations: ['Calo quá thấp'],
+      violations: ['Calo quá thấp', 'Lần 2: Calo quá thấp'],
       usedFallback: true,
+    });
+  });
+
+  it('keeps the first-attempt violations when the retry fixes them', async () => {
+    const { result } = run(['{"kcal":900}', '{"kcal":1800}'], atLeast1500);
+    const { data, meta } = await result;
+    expect(data).toEqual({ kcal: 1800 });
+    expect(meta).toMatchObject({
+      retryCount: 1,
+      violations: ['Calo quá thấp'],
+      usedFallback: false,
     });
   });
 

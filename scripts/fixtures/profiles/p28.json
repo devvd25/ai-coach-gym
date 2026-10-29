@@ -1,0 +1,18 @@
+{
+  "id": "p28",
+  "description": "Nữ chọn 4 ngày cho 3 buổi",
+  "profile": {
+    "goal": "maintain",
+    "sex": "female",
+    "age": 35,
+    "heightCm": 161,
+    "weightKg": 58,
+    "level": "intermediate",
+    "injuries": "",
+    "sessionsPerWeek": 3,
+    "sessionMinutes": 60,
+    "preferredDays": ["mon", "tue", "thu", "sat"],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

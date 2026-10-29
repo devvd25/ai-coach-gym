@@ -1,0 +1,18 @@
+{
+  "id": "p03",
+  "description": "Nam trung bình tăng cơ 4 buổi",
+  "profile": {
+    "goal": "muscle_gain",
+    "sex": "male",
+    "age": 23,
+    "heightCm": 175,
+    "weightKg": 68,
+    "level": "intermediate",
+    "injuries": "",
+    "sessionsPerWeek": 4,
+    "sessionMinutes": 75,
+    "preferredDays": [],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

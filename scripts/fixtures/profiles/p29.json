@@ -1,0 +1,18 @@
+{
+  "id": "p29",
+  "description": "Nam khuỷu tay đau, gym",
+  "profile": {
+    "goal": "muscle_gain",
+    "sex": "male",
+    "age": 30,
+    "heightCm": 174,
+    "weightKg": 77,
+    "level": "intermediate",
+    "injuries": "Viêm khuỷu tay (tennis elbow)",
+    "sessionsPerWeek": 4,
+    "sessionMinutes": 60,
+    "preferredDays": [],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

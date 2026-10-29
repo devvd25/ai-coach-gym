@@ -1,0 +1,18 @@
+{
+  "id": "p01",
+  "description": "Nam trẻ mới tập, gym, giảm mỡ",
+  "profile": {
+    "goal": "fat_loss",
+    "sex": "male",
+    "age": 19,
+    "heightCm": 170,
+    "weightKg": 78,
+    "level": "beginner",
+    "injuries": "",
+    "sessionsPerWeek": 3,
+    "sessionMinutes": 60,
+    "preferredDays": [],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

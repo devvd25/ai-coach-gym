@@ -51,7 +51,7 @@ export function AiMetaLine({ meta }: { meta: AiMeta }) {
       {meta.violations.length > 0 && (
         <details>
           <summary className="muted">
-            Lỗi AI mắc ở lần trả lời gần nhất ({meta.violations.length})
+            Lỗi AI đã mắc trước khi được chấp nhận ({meta.violations.length})
           </summary>
           <ul className="ai-violations">
             {meta.violations.map((v) => (

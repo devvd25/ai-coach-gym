@@ -1,0 +1,18 @@
+{
+  "id": "p13",
+  "description": "Nữ 45 tuổi giảm mỡ, gym 4 buổi",
+  "profile": {
+    "goal": "fat_loss",
+    "sex": "female",
+    "age": 45,
+    "heightCm": 162,
+    "weightKg": 72,
+    "level": "intermediate",
+    "injuries": "",
+    "sessionsPerWeek": 4,
+    "sessionMinutes": 60,
+    "preferredDays": [],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

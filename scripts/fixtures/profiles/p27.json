@@ -1,0 +1,18 @@
+{
+  "id": "p27",
+  "description": "Nam vận động viên phong trào 6 buổi",
+  "profile": {
+    "goal": "muscle_gain",
+    "sex": "male",
+    "age": 24,
+    "heightCm": 181,
+    "weightKg": 80,
+    "level": "advanced",
+    "injuries": "",
+    "sessionsPerWeek": 6,
+    "sessionMinutes": 75,
+    "preferredDays": [],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

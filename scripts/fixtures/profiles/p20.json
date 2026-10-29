@@ -1,0 +1,18 @@
+{
+  "id": "p20",
+  "description": "Nữ 2 buổi cuối tuần",
+  "profile": {
+    "goal": "maintain",
+    "sex": "female",
+    "age": 30,
+    "heightCm": 163,
+    "weightKg": 54,
+    "level": "beginner",
+    "injuries": "",
+    "sessionsPerWeek": 2,
+    "sessionMinutes": 60,
+    "preferredDays": ["sat", "sun"],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

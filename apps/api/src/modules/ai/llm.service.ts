@@ -75,6 +75,9 @@ export interface StructuredTask<T> {
   fallback(): T;
 }
 
+/** Marks violations found in the answer to the retry prompt. */
+export const RETRY_PREFIX = 'Lần 2: ';
+
 export interface StructuredResult<T> {
   data: T;
   meta: AiMeta;
@@ -97,7 +100,7 @@ export async function runStructured<T>(
   const jsonSchema = z.toJSONSchema(t.schema);
   const messages = [...t.messages];
   let schemaValid = false;
-  let violations: string[] = [];
+  const violations: string[] = [];
   let outputTokens: number | null = null;
   let error: string | null = null;
   let attempt = 0;
@@ -128,7 +131,11 @@ export async function runStructured<T>(
     if (attempt === 0) schemaValid = result.success;
 
     const problems = result.success ? t.check(result.data) : describeSchemaError(result.error);
-    if (result.success) violations = problems;
+    // Safety-rule violations of every attempt are kept (second-attempt ones prefixed), so a plan
+    // fixed on retry still records what the model got wrong first.
+    if (result.success) {
+      violations.push(...problems.map((p) => (attempt === 0 ? p : `${RETRY_PREFIX}${p}`)));
+    }
     if (problems.length === 0 && result.success) {
       accepted = result.data;
       break;

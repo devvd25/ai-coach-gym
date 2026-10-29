@@ -1,0 +1,18 @@
+{
+  "id": "p16",
+  "description": "Nữ nhẹ cân 40 kg tăng cơ",
+  "profile": {
+    "goal": "muscle_gain",
+    "sex": "female",
+    "age": 20,
+    "heightCm": 150,
+    "weightKg": 40,
+    "level": "beginner",
+    "injuries": "",
+    "sessionsPerWeek": 3,
+    "sessionMinutes": 45,
+    "preferredDays": [],
+    "location": "home",
+    "equipment": ["dumbbell", "band", "bodyweight"]
+  }
+}

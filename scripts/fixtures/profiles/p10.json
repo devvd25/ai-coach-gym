@@ -1,0 +1,18 @@
+{
+  "id": "p10",
+  "description": "Nam nhiều chấn thương: gối và lưng",
+  "profile": {
+    "goal": "maintain",
+    "sex": "male",
+    "age": 50,
+    "heightCm": 170,
+    "weightKg": 80,
+    "level": "beginner",
+    "injuries": "Đau gối, thỉnh thoảng đau lưng dưới",
+    "sessionsPerWeek": 2,
+    "sessionMinutes": 45,
+    "preferredDays": [],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

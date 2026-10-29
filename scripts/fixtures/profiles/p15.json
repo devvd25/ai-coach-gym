@@ -1,0 +1,18 @@
+{
+  "id": "p15",
+  "description": "Nam gầy muốn tăng cân",
+  "profile": {
+    "goal": "muscle_gain",
+    "sex": "male",
+    "age": 21,
+    "heightCm": 178,
+    "weightKg": 56,
+    "level": "beginner",
+    "injuries": "",
+    "sessionsPerWeek": 4,
+    "sessionMinutes": 60,
+    "preferredDays": [],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "p24",
+  "description": "Chấn thương ghi bằng tiếng Anh/không dấu",
+  "profile": {
+    "goal": "muscle_gain",
+    "sex": "male",
+    "age": 27,
+    "heightCm": 176,
+    "weightKg": 74,
+    "level": "intermediate",
+    "injuries": "dau goi trai, knee pain",
+    "sessionsPerWeek": 4,
+    "sessionMinutes": 60,
+    "preferredDays": [],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

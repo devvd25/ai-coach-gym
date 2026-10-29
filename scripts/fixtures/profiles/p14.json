@@ -1,0 +1,18 @@
+{
+  "id": "p14",
+  "description": "Nam béo phì mới tập",
+  "profile": {
+    "goal": "fat_loss",
+    "sex": "male",
+    "age": 35,
+    "heightCm": 172,
+    "weightKg": 105,
+    "level": "beginner",
+    "injuries": "",
+    "sessionsPerWeek": 3,
+    "sessionMinutes": 45,
+    "preferredDays": [],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

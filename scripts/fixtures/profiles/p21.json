@@ -1,0 +1,18 @@
+{
+  "id": "p21",
+  "description": "Nam chỉ có máy tập",
+  "profile": {
+    "goal": "fat_loss",
+    "sex": "male",
+    "age": 40,
+    "heightCm": 169,
+    "weightKg": 84,
+    "level": "beginner",
+    "injuries": "",
+    "sessionsPerWeek": 3,
+    "sessionMinutes": 45,
+    "preferredDays": [],
+    "location": "gym",
+    "equipment": ["machine", "bodyweight"]
+  }
+}

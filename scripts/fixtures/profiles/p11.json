@@ -1,0 +1,18 @@
+{
+  "id": "p11",
+  "description": "Học sinh 16 tuổi, tại nhà không dụng cụ",
+  "profile": {
+    "goal": "muscle_gain",
+    "sex": "male",
+    "age": 16,
+    "heightCm": 165,
+    "weightKg": 52,
+    "level": "beginner",
+    "injuries": "",
+    "sessionsPerWeek": 3,
+    "sessionMinutes": 45,
+    "preferredDays": [],
+    "location": "home",
+    "equipment": ["bodyweight"]
+  }
+}

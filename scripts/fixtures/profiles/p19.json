@@ -1,0 +1,18 @@
+{
+  "id": "p19",
+  "description": "Nam 90 phút, 3 buổi",
+  "profile": {
+    "goal": "muscle_gain",
+    "sex": "male",
+    "age": 28,
+    "heightCm": 183,
+    "weightKg": 88,
+    "level": "advanced",
+    "injuries": "",
+    "sessionsPerWeek": 3,
+    "sessionMinutes": 90,
+    "preferredDays": ["mon", "wed", "fri"],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "p26",
+  "description": "Nữ sau sinh, giảm mỡ nhẹ",
+  "profile": {
+    "goal": "fat_loss",
+    "sex": "female",
+    "age": 32,
+    "heightCm": 157,
+    "weightKg": 64,
+    "level": "beginner",
+    "injuries": "Mới sinh 6 tháng, cơ bụng chưa hồi phục",
+    "sessionsPerWeek": 3,
+    "sessionMinutes": 30,
+    "preferredDays": [],
+    "location": "home",
+    "equipment": ["dumbbell", "band", "bodyweight"]
+  }
+}

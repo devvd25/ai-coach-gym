@@ -1,0 +1,18 @@
+{
+  "id": "p05",
+  "description": "Nam nâng cao 6 buổi duy trì",
+  "profile": {
+    "goal": "maintain",
+    "sex": "male",
+    "age": 31,
+    "heightCm": 180,
+    "weightKg": 82,
+    "level": "advanced",
+    "injuries": "",
+    "sessionsPerWeek": 6,
+    "sessionMinutes": 60,
+    "preferredDays": [],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "p22",
+  "description": "Nữ tạ đơn + xà, nâng cao",
+  "profile": {
+    "goal": "maintain",
+    "sex": "female",
+    "age": 26,
+    "heightCm": 167,
+    "weightKg": 60,
+    "level": "advanced",
+    "injuries": "",
+    "sessionsPerWeek": 4,
+    "sessionMinutes": 45,
+    "preferredDays": [],
+    "location": "home",
+    "equipment": ["dumbbell", "pullup_bar", "bodyweight"]
+  }
+}

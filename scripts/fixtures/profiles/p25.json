@@ -1,0 +1,18 @@
+{
+  "id": "p25",
+  "description": "Nam 65 tuổi, đau lưng, tại nhà",
+  "profile": {
+    "goal": "maintain",
+    "sex": "male",
+    "age": 65,
+    "heightCm": 165,
+    "weightKg": 68,
+    "level": "beginner",
+    "injuries": "Đau lưng mãn tính",
+    "sessionsPerWeek": 2,
+    "sessionMinutes": 30,
+    "preferredDays": [],
+    "location": "home",
+    "equipment": ["dumbbell", "band", "bodyweight"]
+  }
+}

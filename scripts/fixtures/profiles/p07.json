@@ -1,0 +1,18 @@
+{
+  "id": "p07",
+  "description": "Nữ thoát vị đĩa đệm lưng",
+  "profile": {
+    "goal": "fat_loss",
+    "sex": "female",
+    "age": 38,
+    "heightCm": 160,
+    "weightKg": 66,
+    "level": "beginner",
+    "injuries": "Thoát vị đĩa đệm lưng dưới L4-L5, bác sĩ khuyên tránh cúi gập nặng",
+    "sessionsPerWeek": 3,
+    "sessionMinutes": 45,
+    "preferredDays": [],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

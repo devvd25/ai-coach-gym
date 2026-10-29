@@ -1,0 +1,18 @@
+{
+  "id": "p08",
+  "description": "Nam đau vai khi đẩy trên đầu",
+  "profile": {
+    "goal": "maintain",
+    "sex": "male",
+    "age": 42,
+    "heightCm": 168,
+    "weightKg": 75,
+    "level": "intermediate",
+    "injuries": "Đau khớp vai trái khi đẩy tạ qua đầu",
+    "sessionsPerWeek": 3,
+    "sessionMinutes": 60,
+    "preferredDays": ["tue", "thu", "sat"],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

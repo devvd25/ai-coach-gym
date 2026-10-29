@@ -1,0 +1,18 @@
+{
+  "id": "p02",
+  "description": "Nữ văn phòng mới tập tại nhà, tạ đơn",
+  "profile": {
+    "goal": "fat_loss",
+    "sex": "female",
+    "age": 27,
+    "heightCm": 158,
+    "weightKg": 62,
+    "level": "beginner",
+    "injuries": "",
+    "sessionsPerWeek": 3,
+    "sessionMinutes": 45,
+    "preferredDays": ["mon", "wed", "fri"],
+    "location": "home",
+    "equipment": ["dumbbell", "band", "bodyweight"]
+  }
+}

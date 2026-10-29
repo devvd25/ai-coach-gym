@@ -1,0 +1,18 @@
+{
+  "id": "p09",
+  "description": "Nữ đau cổ tay, chỉ có thân",
+  "profile": {
+    "goal": "fat_loss",
+    "sex": "female",
+    "age": 24,
+    "heightCm": 155,
+    "weightKg": 52,
+    "level": "beginner",
+    "injuries": "Đau cổ tay khi chống đẩy",
+    "sessionsPerWeek": 2,
+    "sessionMinutes": 30,
+    "preferredDays": [],
+    "location": "home",
+    "equipment": ["bodyweight"]
+  }
+}

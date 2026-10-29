@@ -1,0 +1,18 @@
+{
+  "id": "p06",
+  "description": "Nam đau gối, gym",
+  "profile": {
+    "goal": "muscle_gain",
+    "sex": "male",
+    "age": 25,
+    "heightCm": 172,
+    "weightKg": 70,
+    "level": "intermediate",
+    "injuries": "Đau gối phải khi squat sâu",
+    "sessionsPerWeek": 4,
+    "sessionMinutes": 60,
+    "preferredDays": [],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

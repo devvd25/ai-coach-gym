@@ -1,0 +1,18 @@
+{
+  "id": "p04",
+  "description": "Nữ nâng cao tăng cơ 5 buổi",
+  "profile": {
+    "goal": "muscle_gain",
+    "sex": "female",
+    "age": 29,
+    "heightCm": 165,
+    "weightKg": 57,
+    "level": "advanced",
+    "injuries": "",
+    "sessionsPerWeek": 5,
+    "sessionMinutes": 60,
+    "preferredDays": [],
+    "location": "gym",
+    "equipment": ["barbell", "dumbbell", "machine", "pullup_bar", "band", "bodyweight"]
+  }
+}

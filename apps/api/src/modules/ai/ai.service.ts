@@ -4,8 +4,6 @@ import {
   aiNutritionOutputSchema,
   aiRequestSchema,
   aiReviewOutputSchema,
-  buildAiPlanOutputSchema,
-  DAYS,
   mondayOf,
   nutritionDaySchema,
   type AiChatOutput,
@@ -16,7 +14,6 @@ import {
   type AiReviewOutput,
   type AiStatus,
   type ChatMessage,
-  type Day,
   type Exercise,
   type NutritionDay,
   type Plan,
@@ -32,13 +29,12 @@ import type { WeightService } from '../workouts/weight.service.js';
 import type { WorkoutService } from '../workouts/workout.service.js';
 import { AiRequestModel, NutritionDayModel } from './ai.model.js';
 import { runStructured, type AiLogger, type LlmClient } from './llm.service.js';
-import { referenceTargets } from './nutrition-reference.js';
 import { CHAT_PROMPT_VERSION, chatMessages } from './prompts/chat.v1.js';
 import { EXPLAIN_PROMPT_VERSION, explainMessages } from './prompts/explain.v1.js';
-import { NUTRITION_PROMPT_VERSION, nutritionMessages } from './prompts/nutrition.v1.js';
-import { PLAN_PROMPT_VERSION, planMessages } from './prompts/plan.v1.js';
-import { allowedExercises, checkNutrition, checkPlan } from './safety-rules.js';
-import { CHAT_FALLBACK, templateNutrition, templatePlan, templateReview } from './templates.js';
+import { NUTRITION_PROMPT_VERSION } from './prompts/nutrition.v1.js';
+import { PLAN_PROMPT_VERSION } from './prompts/plan.v1.js';
+import { nutritionTask, planTask } from './tasks.js';
+import { CHAT_FALLBACK, templateReview } from './templates.js';
 
 export const PROMPT_VERSIONS = {
   plan: PLAN_PROMPT_VERSION,
@@ -180,30 +176,7 @@ export function createAiService(deps: AiServiceDeps, log: AiLogger = logToDataba
     async generatePlan(userId, weekStart) {
       const profile = await profiles.get(userId);
       const library = await exercises.list({});
-      const allowed = allowedExercises(profile, library);
-      const [first, ...rest] = allowed.map((e) => e.slug);
-      if (!first) {
-        throw new AppError(
-          422,
-          'NO_EXERCISES',
-          'Không có bài tập phù hợp với dụng cụ và hạn chế của bạn',
-        );
-      }
-      const result = await runStructured(llm, log, {
-        userId,
-        task: 'plan',
-        promptVersion: PLAN_PROMPT_VERSION,
-        messages: planMessages(profile, allowed),
-        schema: buildAiPlanOutputSchema({
-          slugs: [first, ...rest],
-          days: profile.preferredDays.length
-            ? ([...profile.preferredDays] as [Day, ...Day[]])
-            : DAYS,
-          sessions: profile.sessionsPerWeek,
-        }),
-        check: (out) => checkPlan(out, profile, library),
-        fallback: () => templatePlan(profile, library),
-      });
+      const result = await runStructured(llm, log, planTask(userId, profile, library));
       const plan = await plans.replaceWeek(
         userId,
         weekStart,
@@ -216,15 +189,7 @@ export function createAiService(deps: AiServiceDeps, log: AiLogger = logToDataba
 
     async generateNutrition(userId, date) {
       const profile = await profiles.get(userId);
-      const result = await runStructured(llm, log, {
-        userId,
-        task: 'nutrition',
-        promptVersion: NUTRITION_PROMPT_VERSION,
-        messages: nutritionMessages(profile, referenceTargets(profile)),
-        schema: aiNutritionOutputSchema,
-        check: (out) => checkNutrition(out, profile),
-        fallback: () => templateNutrition(profile),
-      });
+      const result = await runStructured(llm, log, nutritionTask(userId, profile));
       const source = result.meta.usedFallback ? 'template' : 'ai';
       return {
         nutrition: await saveNutrition(userId, date, source, result.data),

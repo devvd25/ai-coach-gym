@@ -23,6 +23,7 @@ Quy ước làm việc và các mốc phát triển: xem [AGENTS.md](AGENTS.md).
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | mới nhất | Bật WSL 2; cấp ít nhất 2 GB RAM cho Docker (SQL Server cần) |
 | [Ollama](https://ollama.com/download) | mới nhất | Cài native trên Windows, không chạy trong Docker |
 | Git | mới nhất | |
+| [Python](https://www.python.org/downloads/) | 3.11+ | Chỉ cần cho thực nghiệm ML: `python -m pip install -r ml/requirements.txt` |
 
 Tải model LLM (khoảng 2,5 GB):
 
@@ -115,6 +116,11 @@ Các đường dẫn `/api/*` (trừ đăng ký, đăng nhập) cần header `Au
 | `pnpm db:create` | Tạo database theo `DB_NAME` |
 | `pnpm db:migrate` | Chạy migration mới |
 | `pnpm --filter @ai-coach/api db:migrate:undo` | Hoàn tác migration gần nhất |
+| `pnpm benchmark:llm` | Benchmark LLM trên 30 hồ sơ mẫu → `scripts/results/` |
+| `pnpm ml:export` | Xuất dữ liệu tập luyện ẩn danh (người dùng đồng ý nghiên cứu) → `ml/data/real_weeks.csv` |
+| `python ml/generate_synthetic.py` | Sinh dữ liệu mô phỏng → `ml/data/synthetic_weeks.csv` |
+
+Cách chạy và đọc kết quả 3 thực nghiệm (đếm Squat, benchmark LLM, Random Forest): xem [docs/experiments.md](docs/experiments.md).
 
 Tạo migration mới (đặt tên theo thời gian, đuôi `.cjs`) trong `apps/api/src/db/migrations/`. **Không dùng** `sequelize.sync({ alter: true })`.
 
@@ -132,6 +138,9 @@ apps/
   web/            React app (token màu & font lấy từ Figma: src/styles/tokens.css)
 packages/
   shared/         Zod schema + type dùng chung
+scripts/          benchmark-llm.ts + fixtures/profiles (30 hồ sơ mẫu)
+ml/               generate_synthetic.py, progress_lib.py, progress_rf.ipynb, figures/, data/ (không commit)
+docs/             experiments.md
 docker-compose.yml  SQL Server 2022 (chỉ mở ở 127.0.0.1)
 .env.example        Mẫu biến môi trường
 ```

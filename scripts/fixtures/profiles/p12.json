@@ -1,0 +1,18 @@
+{
+  "id": "p12",
+  "description": "Người 60 tuổi duy trì sức khỏe",
+  "profile": {
+    "goal": "maintain",
+    "sex": "female",
+    "age": 60,
+    "heightCm": 152,
+    "weightKg": 55,
+    "level": "beginner",
+    "injuries": "Khớp gối hơi yếu",
+    "sessionsPerWeek": 2,
+    "sessionMinutes": 30,
+    "preferredDays": ["tue", "fri"],
+    "location": "home",
+    "equipment": ["dumbbell", "band", "bodyweight"]
+  }
+}
