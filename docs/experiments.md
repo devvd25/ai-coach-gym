@@ -136,7 +136,24 @@ Thời gian: khoảng 10–30 giây mỗi lần gọi với qwen3:4b trên GPU 1
 | Lịch tập (`plan.v1`) | 21,3 / 32,2 / 42,8 giây | 30/30 | 4/30 (13%) | 1/30 (3%, p03) | 797 |
 | Dinh dưỡng (`nutrition.v1`) | 10,1 / 12,0 / 12,5 giây | 30/30 | 0/30 | 0/30 | 530 |
 
-- **Lỗi lần đầu ở lịch tập** (4 hồ sơ): 2 lần ghi rep dạng `"x10"` (p09, p16), 1 lần rep là `"]"` (p22); 3 lần này đều sửa được ở lần thử lại. p03 tạo một buổi tên "Ngày nghỉ" ở cả 2 lần, nên phải dùng mẫu chuẩn. Hướng cải tiến cho `plan.v2`: ràng buộc `reps` bằng `pattern` trong JSON Schema, và cấm từ "nghỉ" trong tiêu đề.
+- **Lỗi lần đầu ở lịch tập** (4 hồ sơ): 2 lần ghi rep dạng `"x10"` (p09, p16), 1 lần rep là `"]"` (p22); 3 lần này đều sửa được ở lần thử lại. p03 tạo một buổi tên "Ngày nghỉ" ở cả 2 lần, nên phải dùng mẫu chuẩn.
+
+**Cải tiến `plan.v2` (29/10/2026)** (file `apps/api/src/modules/ai/prompts/plan.v2.ts`). Chuyển thêm 2 quy tắc từ lời dặn trong prompt sang ràng buộc cứng trong JSON Schema:
+- `title` phải chọn trong danh sách tên buổi (`SESSION_TITLES`);
+- `reps` phải khớp mẫu `^([0-9]{1,2}(-[0-9]{1,2})?|[0-9]{2,3}s)$`.
+
+Ngoài ra, gợi ý cho từng bài đổi từ `4x6-10` sang `4 set, 6-10`, vì cách ghi cũ có thể khiến model bắt chước viết rep dạng "x10". Chạy lại 30 hồ sơ cùng điều kiện (qwen3:4b, 1 lần chạy, `--delay 20`, `pnpm benchmark:llm --tasks plan --plan-version plan.v2`):
+
+| Lịch tập | Độ trễ trung vị / p90 / max | JSON đúng lần đầu | Vi phạm luật ở lần đầu | Phải thử lại | Dùng mẫu chuẩn | Token (trung vị) |
+|---|---|---|---|---|---|---|
+| `plan.v1` | 21,3 / 32,2 / 42,8 giây | 30/30 | 4/30 | 4/30 | 1/30 | 796 |
+| **`plan.v2`** | **15,9 / 22,5 / 33,0 giây** | 30/30 | **0/30** | **0/30** | **0/30** | 764 |
+
+- v2 loại hết các lỗi v1 còn mắc. Do không còn lần nào phải gọi lại, độ trễ trung vị giảm khoảng 25% và p90 giảm khoảng 30%.
+- p23 (chèn lệnh) vẫn cho 12 set mỗi buổi.
+- **Từ ngày này app dùng `plan.v2`** (`CURRENT_PLAN_VERSION` trong `tasks.ts`). `plan.v1` vẫn được giữ để tái lập kết quả.
+- Hạn chế: mới chạy 1 lần mỗi hồ sơ, nên nhóm cần chạy thêm `--runs 3` cho cả 2 phiên bản trước khi kết luận chắc chắn. Danh sách tên buổi cố định làm tiêu đề kém đa dạng hơn: v2 dùng 8/15 tên, nhiều nhất là "Đẩy", "Chân & mông", "Kéo". Cần chấm rubric xem tên có khớp nội dung buổi không.
+- Ý nghĩa cho báo cáo: với model nhỏ (4B), **đưa quy tắc vào JSON Schema hiệu quả hơn nhắc trong prompt**. Kết luận này lặp lại cả ở lần cải tiến trước (ràng buộc số buổi, ngày tập, bài tập) lẫn lần này.
 - **Chấn thương:** bài chống chỉ định bị loại ngay từ enum `slug`, nên không lần nào vi phạm. Ví dụ p07 (thoát vị lưng) không có deadlift, RDL, row, squat tạ đòn; p24 ghi không dấu "dau goi trai" vẫn bị nhận ra (không có squat tạ đòn, lunge, leg extension). **Hạn chế:** danh sách từ khóa còn thô. p29 (đau khuỷu tay) vẫn có barbell curl, triceps pushdown; p08 (đau vai) vẫn có incline dumbbell press và push-up. Cần chuyên gia rà lại `INJURY_RULES`.
 - **Prompt injection (p23):** không có tác dụng; lịch 12 set mỗi buổi, thực đơn 1.980 kcal.
 - **Dinh dưỡng – phát hiện quan trọng:** cả 30/30 lần model **chép nguyên** mục tiêu tham chiếu (kcal, protein, carb, fat) do hệ thống tính bằng Mifflin–St Jeor; tổng các bữa lệch tối đa 0,2% so với mục tiêu. Nghĩa là con số calo/macro thực chất do công thức quyết định, còn LLM đóng góp **món ăn** (81 món khác nhau trên 30 thực đơn) và **lời giải thích**. Báo cáo nên trình bày đúng như vậy; độ hợp lý của khẩu phần so với số kcal ghi kèm cần chấm rubric thủ công.

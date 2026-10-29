@@ -15,6 +15,7 @@
  *   --out       output folder (default: scripts/results)
  *   --delay     seconds to rest between calls, so a laptop stays usable (default: 0)
  *   --resume    path of an earlier llm-benchmark-*.csv: skip the calls it already has and append
+ *   --plan-version  plan prompt to test, e.g. plan.v1 or plan.v2 (default: the app's current one)
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -28,7 +29,13 @@ import {
   runStructured,
   type StructuredTask,
 } from '../apps/api/src/modules/ai/llm.service.js';
-import { nutritionTask, planTask } from '../apps/api/src/modules/ai/tasks.js';
+import {
+  CURRENT_PLAN_VERSION,
+  nutritionTask,
+  PLAN_VERSIONS,
+  planTask,
+  type PlanVersion,
+} from '../apps/api/src/modules/ai/tasks.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const rootEnv = join(here, '..', '.env');
@@ -45,6 +52,7 @@ const { values } = parseArgs({
     out: { type: 'string', default: join(here, 'results') },
     delay: { type: 'string', default: '0' },
     resume: { type: 'string' },
+    'plan-version': { type: 'string', default: CURRENT_PLAN_VERSION },
   },
   allowPositionals: true,
 });
@@ -59,6 +67,12 @@ const models = values.models
 const tasks = values.tasks.split(',').map((t) => t.trim()) as Task[];
 const runs = Math.max(1, Number.parseInt(values.runs, 10) || 1);
 const delayMs = Math.max(0, Number(values.delay) || 0) * 1000;
+const planVersion = values['plan-version'] as PlanVersion;
+if (!(planVersion in PLAN_VERSIONS)) {
+  throw new Error(
+    `Unknown plan version "${planVersion}" (${Object.keys(PLAN_VERSIONS).join(', ')})`,
+  );
+}
 for (const t of tasks) {
   if (!TASKS.includes(t)) throw new Error(`Unknown task "${t}" (use ${TASKS.join(', ')})`);
 }
@@ -104,7 +118,7 @@ const cell = (v: string | number | boolean | null) => {
 
 function taskFor(task: Task, profile: Profile): StructuredTask<unknown> {
   return (
-    task === 'plan' ? planTask(0, profile, SEEDED_LIBRARY) : nutritionTask(0, profile)
+    task === 'plan' ? planTask(0, profile, SEEDED_LIBRARY, planVersion) : nutritionTask(0, profile)
   ) as StructuredTask<unknown>;
 }
 

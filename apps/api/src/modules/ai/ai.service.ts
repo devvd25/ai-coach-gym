@@ -32,12 +32,11 @@ import { runStructured, type AiLogger, type LlmClient } from './llm.service.js';
 import { CHAT_PROMPT_VERSION, chatMessages } from './prompts/chat.v1.js';
 import { EXPLAIN_PROMPT_VERSION, explainMessages } from './prompts/explain.v1.js';
 import { NUTRITION_PROMPT_VERSION } from './prompts/nutrition.v1.js';
-import { PLAN_PROMPT_VERSION } from './prompts/plan.v1.js';
-import { nutritionTask, planTask } from './tasks.js';
+import { CURRENT_PLAN_VERSION, nutritionTask, planTask } from './tasks.js';
 import { CHAT_FALLBACK, templateReview } from './templates.js';
 
 export const PROMPT_VERSIONS = {
-  plan: PLAN_PROMPT_VERSION,
+  plan: CURRENT_PLAN_VERSION,
   nutrition: NUTRITION_PROMPT_VERSION,
   explain: EXPLAIN_PROMPT_VERSION,
   chat: CHAT_PROMPT_VERSION,

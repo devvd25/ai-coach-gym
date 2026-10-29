@@ -13,10 +13,37 @@ export type AiTask = (typeof AI_TASKS)[number];
  * is an enum of the exercises this user may do, the day an enum of their days, and the number of
  * sessions is fixed. Safety rules still re-check everything after parsing.
  */
+/** Session names the model must pick from in plan.v2 (also used by the templates). */
+export const SESSION_TITLES = [
+  'Toàn thân A',
+  'Toàn thân B',
+  'Toàn thân C',
+  'Thân trên',
+  'Thân trên A',
+  'Thân trên B',
+  'Thân dưới',
+  'Thân dưới A',
+  'Thân dưới B',
+  'Đẩy (ngực, vai, tay sau)',
+  'Kéo (lưng, tay trước)',
+  'Chân & mông',
+  'Lưng & ngực',
+  'Vai & tay',
+  'Core & thể lực',
+] as const;
+
+/** "8", "8-12" or "45s" as a JSON Schema pattern (digits only: grammar engines may lack \d). */
+export const REPS_PATTERN = /^([0-9]{1,2}(-[0-9]{1,2})?|[0-9]{2,3}s)$/;
+
 export function buildAiPlanOutputSchema(opts: {
   slugs: readonly [string, ...string[]];
   days: readonly [Day, ...Day[]];
   sessions: number;
+  /**
+   * plan.v2: also constrain the session title (enum) and the reps format (pattern), the two
+   * mistakes qwen3:4b still made under plan.v1 ("Ngày nghỉ" sessions, reps like "x10").
+   */
+  strict?: boolean;
 }) {
   return z.object({
     summary: z.string().min(1).max(800),
@@ -24,14 +51,14 @@ export function buildAiPlanOutputSchema(opts: {
       .array(
         z.object({
           day: z.enum(opts.days),
-          title: z.string().min(1).max(60),
+          title: opts.strict ? z.enum(SESSION_TITLES) : z.string().min(1).max(60),
           durationMin: z.number().int().min(10).max(180),
           exercises: z
             .array(
               z.object({
                 slug: z.enum(opts.slugs),
                 sets: z.number().int().min(2).max(5),
-                reps: z.string().min(1).max(10),
+                reps: opts.strict ? z.string().regex(REPS_PATTERN) : z.string().min(1).max(10),
                 restSeconds: z.number().int().min(30).max(240),
               }),
             )
