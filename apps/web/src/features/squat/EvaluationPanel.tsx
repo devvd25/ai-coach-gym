@@ -8,12 +8,14 @@ import {
   type PoseModel,
 } from './config.js';
 import { countingAccuracy, evaluationCsv, type EvaluationRow } from './evaluation.js';
+import { recordFrame, type RecordedRun, type RecordedVideo } from './frames.js';
 import { isSquat, mergeLabels, parseLabels, videoKey, type LabelSet } from './labels.js';
 import { analyzeVideo, rest } from './video-eval.js';
 
-function download(name: string, content: string) {
-  // BOM so Excel opens the Vietnamese file names correctly.
-  const blob = new Blob(['\uFEFF', content], { type: 'text/csv;charset=utf-8' });
+function download(name: string, content: string, type = 'text/csv') {
+  // BOM so Excel opens the Vietnamese file names correctly (CSV only; JSON parsers reject it).
+  const parts = type === 'text/csv' ? ['\uFEFF', content] : [content];
+  const blob = new Blob(parts, { type: `${type};charset=utf-8` });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = name;
@@ -34,6 +36,7 @@ export function EvaluationPanel() {
   const [onlySquat, setOnlySquat] = useState(true);
   const [gentle, setGentle] = useState(true);
   const cancel = useRef(false);
+  const recorded = useRef<RecordedVideo[]>([]);
   const folderInput = useRef<HTMLInputElement>(null);
   const accuracy = countingAccuracy(rows);
 
@@ -70,19 +73,27 @@ export function EvaluationPanel() {
     setRows([]);
     cancel.current = false;
     const done: EvaluationRow[] = [];
+    recorded.current = [];
     try {
       for (const [index, file] of queue.entries()) {
         if (index > 0 && gentle) await rest(EVAL_GENTLE.videoRestMs);
         if (cancel.current) break;
         setProgress({ index, fraction: 0 });
+        const groundTruth = labelOf(file)?.count ?? null;
+        const rec: RecordedVideo = { video: file.name, groundTruth, aspect: 1, t: [], legs: [] };
         const row = await analyzeVideo(file, {
           model,
           fps,
           frameRestMs: gentle ? EVAL_GENTLE.frameRestMs : 0,
           onProgress: (fraction) => setProgress({ index, fraction }),
           cancelled: () => cancel.current,
+          onFrame: (frame) => {
+            rec.aspect = frame.aspect;
+            recordFrame(rec, frame);
+          },
         });
-        done.push({ ...row, groundTruth: labelOf(file)?.count ?? null });
+        recorded.current.push(rec);
+        done.push({ ...row, groundTruth });
         setRows([...done]);
       }
     } catch (err) {
@@ -96,6 +107,18 @@ export function EvaluationPanel() {
     const d = new Date();
     const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
     download(`squat-eval-${model}-${fps}fps-${stamp}.csv`, evaluationCsv(rows, COUNTER_CONFIG));
+  }
+
+  /** Leg landmarks of every frame, for `pnpm squat:sweep` (re-test thresholds without the model). */
+  function exportFrames() {
+    const runData: RecordedRun = {
+      format: 'ai-coach-squat-frames/1',
+      model,
+      fps,
+      createdAt: new Date().toISOString(),
+      videos: recorded.current,
+    };
+    download(`squat-frames-${model}-${fps}fps.json`, JSON.stringify(runData), 'application/json');
   }
 
   const running = progress !== null;
@@ -249,6 +272,14 @@ export function EvaluationPanel() {
             onClick={exportCsv}
           >
             Tải CSV
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={rows.length === 0 || running}
+            onClick={exportFrames}
+          >
+            Tải dữ liệu frame (JSON)
           </button>
         </div>
       </section>

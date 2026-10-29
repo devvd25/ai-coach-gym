@@ -21,7 +21,8 @@
     "db:seed": "pnpm --filter @ai-coach/api db:seed",
     "db:seed:demo": "pnpm --filter @ai-coach/shared build && pnpm --filter @ai-coach/api seed:demo",
     "benchmark:llm": "pnpm --filter @ai-coach/shared build && pnpm --filter @ai-coach/scripts benchmark:llm",
-    "ml:export": "pnpm --filter @ai-coach/shared build && pnpm --filter @ai-coach/api export:training"
+    "ml:export": "pnpm --filter @ai-coach/shared build && pnpm --filter @ai-coach/api export:training",
+    "squat:sweep": "pnpm --filter @ai-coach/scripts squat:sweep"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

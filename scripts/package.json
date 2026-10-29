@@ -6,7 +6,8 @@
   "description": "Experiment scripts (LLM benchmark). Not deployed.",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "benchmark:llm": "tsx benchmark-llm.ts"
+    "benchmark:llm": "tsx benchmark-llm.ts",
+    "squat:sweep": "tsx squat-threshold-sweep.ts"
   },
   "dependencies": {
     "@ai-coach/shared": "workspace:*"

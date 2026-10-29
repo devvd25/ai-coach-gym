@@ -69,6 +69,31 @@ Nhận xét:
 - **Cách viết vào báo cáo:** trên dữ liệu "ngoài điều kiện thiết kế", bộ đếm có độ chính xác cao về rep đã đếm (hầu như không đếm thừa) nhưng độ phủ thấp. Đây là căn cứ cho (a) hướng dẫn đứng nghiêng trong app và (b) thí nghiệm độ nhạy ngưỡng `downAngle` (110°, 120°, 130°) cùng với chế độ quay chính diện ở bước sau.
 - Không so trực tiếp con số với TransRAC: bài báo báo cáo trên mọi loại động tác của RepCount-A, còn ở đây chỉ có squat. Nếu đưa vào báo cáo, chỉ so cùng định nghĩa chỉ số và ghi rõ khác biệt về tập dữ liệu.
 
+### 1c. Thử ngưỡng mà không chạy lại mô hình
+
+Trên trang đánh giá, sau khi chạy xong, bấm **Tải dữ liệu frame (JSON)**. File này lưu 6 landmark chân của mọi frame, khoảng 10 KB cho mỗi phút video. Sau đó chạy lại bộ đếm (cùng code `counter.ts`) với nhiều ngưỡng, mỗi lần chỉ vài giây:
+```bash
+pnpm squat:sweep -- ml/data/repcount/results/frames-repcount-lite-15fps.json --down 90,100,110,120,130,140,150 --up 160
+```
+Thêm `--max-low-vis 0.2` để chỉ tính các video thấy rõ chân. Kết quả được ghi ra `<file>-sweep.csv`. Phát lại cho kết quả trùng khớp với lần chạy thật (có test `frames.test.ts`).
+
+**Kết quả lần 2 (29/10/2026): đủ 33/33 video squat** (389 rep thật), Lite, 15 fps, chế độ nhẹ, 35 phút. Biểu đồ: `ml/figures/squat_threshold_sweep.png`.
+
+| `downAngle` (up = 160°) | OBO, tất cả 33 video | MAE chuẩn hóa | OBO, 27 video thấy rõ chân | MAE chuẩn hóa | Đếm thiếu / thừa (33 video) |
+|---|---|---|---|---|---|
+| 90° | 33% | 0,594 | 37% | 0,537 | 28 / 0 |
+| 100° | 42% | 0,510 | 48% | 0,438 | 24 / 1 |
+| **110° (mặc định)** | **48%** | **0,481** | **56%** | **0,403** | 23 / 1 |
+| 120° | 48% | 0,448 | 56% | 0,363 | 23 / 1 |
+| **130°** | **58%** | **0,418** | **67%** | **0,326** | 23 / 1 |
+| 140° | 55% | 0,430 | 63% | 0,341 | 21 / 3 |
+| 150° | 55% | 0,428 | 63% | 0,337 | 20 / 3 |
+
+- Nới ngưỡng xuống-sâu từ 110° lên **130°** là tốt nhất trên bộ này: OBO tăng 48% → 58% (67% với video thấy rõ chân), MAE chuẩn hóa giảm 0,481 → 0,418, mà số video đếm thừa không tăng. Từ 140° trở đi, đếm thừa bắt đầu tăng và độ chính xác không cải thiện thêm.
+- Dù ở ngưỡng nào, vẫn khoảng 20 video bị **đếm thiếu**. Đây là các video quay chính diện, nơi góc gối 2D không phản ánh độ sâu. Muốn cải thiện tiếp thì phải đổi đặc trưng (ví dụ độ cao của hông so với gối, hoặc dùng `worldLandmarks` 3D) chứ không phải chỉnh ngưỡng.
+- **Đánh đổi khi chọn ngưỡng:** 110° buộc mỗi rep phải gần song song mới được đếm, đúng tinh thần "rep hợp lệ" trong hướng dẫn tập. 130° đếm cả squat nông, đúng với cách RepCount gán nhãn.
+- **Quyết định của nhóm (29/10/2026): giữ 110° trong app.** Lý do: app là công cụ huấn luyện, nên một rep chỉ được tính khi đủ sâu (gần song song sàn), đúng như hướng dẫn kỹ thuật. Kết quả ở 130° chỉ báo cáo trong thực nghiệm, để cho thấy bộ đếm sẽ phủ nhãn RepCount tốt hơn nếu chấp nhận cả squat nông.
+
 ---
 
 ## 2. Benchmark LLM (Ollama)

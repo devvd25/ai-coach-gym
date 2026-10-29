@@ -1,5 +1,5 @@
 import { COUNTER_CONFIG, type PoseModel } from './config.js';
-import { initialState, step } from './counter.js';
+import { initialState, step, type Frame } from './counter.js';
 import type { EvaluationRow } from './evaluation.js';
 import { detectPose, getLandmarker, nextTimeline } from './pose.js';
 
@@ -63,6 +63,11 @@ export interface AnalyzeOptions {
   frameRestMs: number;
   onProgress?: (fraction: number) => void;
   cancelled?: () => boolean;
+  /**
+   * Receives every counter input, so a run can be saved and replayed later with other thresholds
+   * (countReps) without running the pose model again.
+   */
+  onFrame?: (frame: Frame) => void;
 }
 
 /**
@@ -103,7 +108,9 @@ export async function analyzeVideo(file: File, opts: AnalyzeOptions): Promise<Ev
         await waitFor(v, 'seeked');
       }
       const landmarks = detectPose(landmarker, v, base + t * 1000);
-      state = step(state, { timestampMs: t * 1000, landmarks, aspect }, COUNTER_CONFIG);
+      const frame: Frame = { timestampMs: t * 1000, landmarks, aspect };
+      opts.onFrame?.(frame);
+      state = step(state, frame, COUNTER_CONFIG);
       if (i % 5 === 0) opts.onProgress?.(t / duration);
       if (opts.frameRestMs) await rest(opts.frameRestMs);
     }
